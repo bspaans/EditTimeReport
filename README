@@ -97,10 +97,10 @@ Installing the Daemon and Client
 
 
       " chart functionality
-      autocmd VimEnter * :r ! timechart -s
-      autocmd VimLeave * :r ! timechart -e
-      autocmd BufNewFile * :r ! timechart -n <afile>:p
-      autocmd BufWritePost * :r ! timechart -w <afile>:p
+      autocmd VimEnter * :silent ! timechart -s
+      autocmd VimLeave * :silent ! timechart -e
+      autocmd BufNewFile * :silent ! timechart -n <afile>:p
+      autocmd BufWritePost * :silent ! timechart -w <afile>:p
 
 
   That's it!
