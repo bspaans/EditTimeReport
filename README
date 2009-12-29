@@ -2,8 +2,8 @@
 
 
 
-EditTimeChart [think of name later]
------------------------------------
+EditTimeChart [think of better name later]
+------------------------------------------
 
   A tool aimed at programmers and other people who spend a lot of time in their 
   editor (or in other scriptable programs). 
@@ -41,19 +41,77 @@ Current status » Client
   The client is a simple bash script that reads a username and password 
   from a file and contacts the daemon. The edit message can be set using 
   command line arguments. You can find the client in the daemon/ 
-  directory. It's currently called `timechart'
+  directory. It's called `timechart' at the moment, but this may change
 
 
 Current status » Graphing
 -------------------------
 
   The graphing program is still under heavy development. It is written in 
-  Haskell and makes use of the libraries in the Haskell Platform; no other 
-  packages are needed. It can currently produce HTML pages, but will also 
-  include a command line and interactive mode. 
+  Haskell and only makes use of the libraries in the Haskell Platform; 
+  no other packages are needed. It can currently produce HTML pages, 
+  but will also include a command line and interactive mode. 
   
-  If you want to have a look at its current (pre-alpha) state, you can compile 
-  the program manually with 
+
+
+Current status » Building
+-------------------------
+
+  Running the daemon and client is already possible (I have been doing so 
+  since begin December), but the graphing functionality is still a bit 
+  lacking. If you don't mind that or if you are up to writing your 
+  own report generators, then these are the instructions to get you 
+  going: 
+
+
+Installing the Daemon and Client
+--------------------------------
+
+  Install the daemon and client by going into the daemon/ 
+  directory and doing a: 
+
+
+      sudo python setup.py install
+
+
+  This will only work if you already have the Twisted library installed, 
+  which is probably well known enough to be packaged by your distribution 
+  already.
+
+  If all has gone right, the daemon, client and basicliser library will 
+  now all be installed. Next, you need to make sure the daemon is started 
+  when you login. There are several ways to do this, some dependent of 
+  window managers, but that should be easy enough to find out. 
+
+  The command to be started on login should read like this:
+
+
+      timechartd /path/to/config/directory/
+
+
+  The path will be used to store the log file and the user database, 
+  so make sure it's writable. 
+
+  Now the only thing that remains is to set up your editor hooks.
+  I have been using the following for vim to give you an idea:
+
+
+      " chart functionality
+      autocmd VimEnter * :r ! timechart -s
+      autocmd VimLeave * :r ! timechart -e
+      autocmd BufNewFile * :r ! timechart -n <afile>:p
+      autocmd BufWritePost * :r ! timechart -w <afile>:p
+
+
+  That's it!
+
+
+Installing the Graph Tool
+-------------------------
+
+  As said, this program is not finished yet, but if you want to have a 
+  look at its current (pre-alpha) state, you can compile with 
+
     ghc --make Html.hs 
 
   To produce a HTML report of the log file, you can then run:
