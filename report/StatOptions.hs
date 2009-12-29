@@ -11,6 +11,7 @@ import Text.Printf
 import System (getEnv)
 import System.FilePath
 import Control.Monad
+import Control.Arrow
 
 
 
@@ -60,25 +61,34 @@ defaultSO     = SO extensionDict [] [] "none"
 -- Asking for StatOptions
 --
 askStatOptions    :: IO StatOptions
-ask               :: String -> [(String, a)] -> IO a
-askNonEmpty       :: String -> IO String
 
 
 askStatOptions = do 
     home <- getEnv "HOME"
     putStrLn $ "  HOME set to " ++ home
+    putStrLn "\n  ==================== Extensions ==================\n"
     putStrLn "  The following extensions are enabled by default:\n" 
     putStrLn $ printExtensions extensionDict
     exts <- askExtensions
     extDict <- return (D.union (D.fromList exts) extensionDict)
     when (exts /= []) (do putStrLn "  Using the following extensions" ; 
                           putStrLn $ printExtensions extDict)
-    return (SO extDict [] [] home)
+    lang <- askLanguages
+    src  <- askSourceDir
+    return (SO extDict lang src home)
 
 
+-- Interactive — Ask helper functions
 -- Ask question and check for valid answer
 -- in assoc list.
 --
+ask               :: String -> [(String, a)] -> IO a
+askNonEmpty       :: String -> IO String
+askMore           :: IO Bool
+askDesc           :: String -> String
+askMultiple       :: IO t -> IO [t]
+
+
 ask s d = do putStrLn $ s ++ "\n"; getAnswer
    where getAnswer = do a <- getLine ; maybe n return $ lookup a d
          n         = putStrLn "  Not a valid option.\n" >> getAnswer
@@ -92,43 +102,82 @@ askNonEmpty s = do
     else return a
 
 
-
--- Interactive — Ask for extensions
---
-askMoreExtensions :: IO Bool
-askExtensions     :: IO [(String, String)]
-askExtension      :: IO (String, String)
-printExtensions   :: Extensions -> String
-
-
-askMoreExtensions = do 
+askMore = do 
     ask "\n  Would you like to enter more (y/n) [N]?" a
     where a = [("y", True), ("n", False), ("", False)]
 
 
-askExtensions = askExts []
-  where askExts r = do more <- askMoreExtensions
-                       if more then do e <- askExtension ; askExts (e:r)
-                               else return r
+askDesc a       = "\n  Enter a description for `" ++ a ++ "'\n"
+
+askMultiple = askOne []
+  where askOne r a = do
+           more <- askMore
+           if more then do e <- a ; askOne (e:r) a
+                   else return r
 
 
-askExtension            = do ext <- askExt ; desc <- askDesc ext ; return (addDot ext, desc)
-  where askExt          = askNonEmpty "\n  Enter a new extension (eg. txt)\n"
-        askDesc a       = askNonEmpty $ "\n  Enter a description for extension `" ++ a ++ "'\n"
-        addDot []       = []
-        addDot ('.':xs) = '.':xs
-        addDot xs       = '.':xs
-
+-- Printers
+--
+printExtensions   :: Extensions -> String
+printMatches      :: Matches -> String
 
 printExtensions = concatMap (uncurry $ printf "    %-7s %-14s\n") . D.assocs 
+printMatches    = concatMap (uncurry (printf "    %-27s %-20s\n") . first joinPath)
 
 
 
-
--- Specify language and project options like this:
+-- Interactive — Ask for extensions
 --
---l = [(splitPath "/home/bspaans/coding/", "code")]
---p = [(splitPath "/home/bspaans/docs/mydocs/", "docs")] 
+askExtensions     :: IO [(String, String)]
+askExtension      :: IO (String, String)
+
+
+askExtensions        = askMultiple askExtension
+askExtension         = do e <- askE ; d <- askD e ; return (addD e, d)
+  where askE         = askNonEmpty "\n  Enter a new extension (eg. txt)\n"
+        askD         = askNonEmpty . askDesc 
+        addD []      = []
+        addD ('.':s) = '.':s
+        addD xs      = '.':xs
+
+
+
+-- Interactive — Ask matches
+--
+askMatch   :: IO Match
+askMatches :: IO Matches
+
+-- TODO: check for pathSeparator at end of path
+--
+askLanguages = do putStrLn "\n  ==================== Languages ==================\n"
+                  putStrLn "\n  If you have a source directory containing different languages"
+                  putStrLn "  in different directories, you can use this program to classify them."
+                  putStrLn "  For example: if you have a directory ~/src containing directories "
+                  putStrLn "  ~/src/python/ and ~/src/haskell/ you can enter ~/src/"
+                  putStrLn "  Currently there are no language directories specified."
+                  m <- askMatches     
+                  when (m /= []) (do putStrLn "\n  Using language directories:\n"; 
+                                     putStrLn $ printMatches m)
+                  return m
+
+askSourceDir = do putStrLn "\n  ================= Source Directories ============\n"
+                  putStrLn "\n  If you have a directory containing different project directories, "
+                  putStrLn "  you can let this program tag the edits in those directories with "
+                  putStrLn "  their projects. For example: if you have a directory ~/src containing "
+                  putStrLn "  directories ~/src/project1/ and ~/src/project2 you can enter ~/src."
+                  putStrLn "  Currently there are no source directories specified."
+                  m <- askMatches     
+                  when (m /= []) (do putStrLn "\n  Using source directories:\n"; 
+                                     putStrLn $ printMatches m)
+                  return m
+
+
+askMatches = askMultiple askMatch
+
+askMatch = do p <- askP ; d <- askD p ; return (splitPath p, d)
+  where askP = askNonEmpty "\n  Enter a new path\n"
+        askD = askNonEmpty . askDesc
+
 
 
 {- StatOptions — Parser
