@@ -6,7 +6,7 @@ user=""
 pass=""
 lines=""
 cmd=""
-config="/home/bspaans/.vimchart"
+config=~/.vimchart
 
 if [ -f "$config" ] ; then
     i=0
@@ -19,7 +19,8 @@ if [ -f "$config" ] ; then
         i=$(($i + 1))
     done
 else
-    echo "Missing $config"
+    echo "Missing $config. The program looks there for a username"
+    echo "and password formatted like this: username:password"
     exit 1
 fi
 
