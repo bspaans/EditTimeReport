@@ -13,8 +13,9 @@ import Report
 import Text.Printf
 
 
--- Stub
-data PrintOptions = P Int
+data PrintOptions = PO [ POption ]
+data POption      = StyleSheet String
+                  | GenerateHeader deriving (Eq, Show)
 
 defaultPO = P 12
 
