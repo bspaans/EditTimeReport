@@ -115,11 +115,16 @@ Installing the Graph Tool
 -------------------------
 
   As said, this program is not finished yet, but if you want to have a 
-  look at its current (pre-alpha) state, you can compile with 
+  look at its current (pre-alpha) state, you can compile it using 
+  cabal:
 
-    ghc --make Html.hs 
+    cabal install
+
+  Or, alternatively, using ghc directly:
+
+    ghc --make Main.hs 
 
   To produce a HTML report of the log file, you can then run:
-    ./Html edittime.log 
 
-  This is all subject to change though.
+    report edittime.log 
+
