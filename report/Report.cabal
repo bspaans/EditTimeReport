@@ -1,0 +1,11 @@
+Name:               Report
+Version:            1.0
+Cabal-Version:      >= 1.2
+License:            GPL
+Author:             Bart Spaans
+Synopsis:           Generating reports from logs.
+Build-Type:         Simple
+
+Executable report
+  Main-Is:          Main.hs
+  Build-Depends:    base >= 3 && < 5, haskell98, xhtml, pretty, filepath, containers
