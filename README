@@ -1,0 +1,53 @@
+¡¡¡¡¡¡ work in progress !!!!!!!
+
+
+
+EditTimeChart [think of name later]
+-----------------------------------
+
+  A tool aimed at programmers and other people who spend a lot of time in their 
+  editor and need to keep track of what's been done over time.
+
+  The idea:
+
+  1. There is a permanently running daemon that logs commands to a file
+  2. Scriptable editors contact the daemon on each save/close/whatever.
+  3. We can produce nice graphs of our work, without having to do any manual work.
+  4. ???
+  5. PROFIT (literally!)
+
+
+
+Current status » Daemon
+-----------------------
+
+  I have had a daemon running since begin december. It was written in Python 
+  using the Twisted networking library. The daemon can not yet be found 
+  in this repos, but will soon be once I clean up the files a bit.  
+
+  The daemon logs to a flat plain text file in the following format:
+
+   2009 12 29 10 39 23 1 363 EDIT /home/bspaans/src/file.hs
+   YEAR MONTH DAY HOUR MIN SEC DOW DOY COMMAND FILE
+
+  where DOW and DOW stand for the day of the week and year, 
+  and where COMMAND is one of EDIT, START or STOP. 
+
+
+
+Current status » Graphing
+-------------------------
+
+  The graphing program is currently under heavy development. It is written in 
+  Haskell and makes use of the libraries in the Haskell Platform; no other 
+  packages are needed. It can currently produce HTML pages, but will also 
+  include a command line and interactive mode. 
+  
+  If you want to have a look at its current (pre-alpha) state, you can compile 
+  the program manually with 
+    ghc --make Html.hs 
+
+  To produce a HTML report of the log file, you can then run:
+    ./Html edittime.log 
+
+  This is all subject to change though.
