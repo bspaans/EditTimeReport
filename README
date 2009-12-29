@@ -51,6 +51,11 @@ Current status » Graphing
   Haskell and only makes use of the libraries in the Haskell Platform; 
   no other packages are needed. It can currently produce HTML pages, 
   but will also include a command line and interactive mode. 
+
+  The program can also keep track of the used languages and if you give 
+  it a source directory it can also track of projects. Once the interface 
+  is ready this will allow you to get neat time reports for your 
+  projects, languages, week days, months, etc.
   
 
 
