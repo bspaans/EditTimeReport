@@ -7,7 +7,8 @@ module Report (
        , SIndexed, SIndexedY, SIndexedM, SIndexedD -- Type abbr for Stats 
        , IndexedAlgebra, SIndexedAlgebra           -- Algebras
        , foldIR, report                            -- Fold and applied fold
-       , indexAlgebra, fromFileToSIR               -- Indexed reports algebra
+       , indexAlgebra, indexFromFile               -- Indexed reports algebra
+       , module Stats
        ) where
 
 
@@ -29,7 +30,10 @@ type SReport  = Report SIndexedReport
 --   [(a1, [(a2, [(a3, [b])])])]
 --
 -- So it can be used to store year, month
--- and day information in the parent node.
+-- and day information in the parent node, 
+-- while keeping the payload data in the leafs.
+--
+-- Note to self: what about Tree a b = Node a [Tree a b] | Leaf b
 --
 newtype IndexedReport a b = IR (Indexed a b) deriving (Eq, Show)
 type    Indexed       a b = [IndexedY a b]
@@ -81,11 +85,11 @@ fromIR (IR ir) = ir
 
 
 
--- Algebra and Fold applied — report
+-- Algebra and Calendar fold applied — report
 --
 report        :: Report SIndexedReport
 indexAlgebra  :: CalendarSAlgebra SIndexedY SIndexedM SIndexedD SIndexedReport
-fromFileToSIR :: FilePath -> IO StatOptions -> IO SIndexedReport
+indexFromFile :: FilePath -> IO StatOptions -> IO SIndexedReport
 
 
 
@@ -97,5 +101,5 @@ indexAlgebra   = (IR, y, mon, days)
         days s = first (day . edit . head) (s, s)
         sh     = snd . head
 
-fromFileToSIR f so  = report <$> fromFile f so 
+indexFromFile f so  = report <$> fromFile f so 
 
