@@ -1,11 +1,13 @@
 --module Html where
 
-import Report
+import Printers
 import Text.XHtml
-import Text.Printf
 import System ( getArgs )
 
 import Control.Applicative
+
+
+
 
 html :: SIndexedReport -> Html
 html = foldIR htmlAlgebra
@@ -14,43 +16,58 @@ html = foldIR htmlAlgebra
 htmlFromFile :: FilePath -> IO StatOptions -> IO Html
 htmlFromFile f = fmap html . indexFromFile f
 
+
 htmlAlgebra :: SIndexedAlgebra Html Html Html Html
 htmlAlgebra = (concatHtml, y, m, d)
-  where y (year, months) = h3 (toHtml . show $ year) 
+  where y (year, months) = h3 (o year) 
                         +++ concatHtml months
-        m (month, days) = h4 (toHtml . show $ month)
+        m (month, days) = h4 (toHtml $ getMonth month)
                         +++ table (concatHtml days)
-        d (day, stats) = table (header +++ map showEntry stats)
-        header = tr (concatHtml . map ((! [thestyle "text-align: left; background: #222; color: #eee"] ) . th . stringToHtml) $ ["Time", "File", "Extension", "Language", "Project"])
+        d (day, stats) = tr (td (o day)
+                             +++ td (table $ header +++ map showEntry stats))
+        header = tr (concatHtml $ map (th . stringToHtml) headers)
+        o = toHtml . show
 
-touched = map (file . edit)
 
-
-showEntry s = tr (td (showTimes s) ! [width "80px"]
-           +++ td (stringToHtml (" " ++ fileName s)) ! [width "400px"]
-           +++ td (showExtension s) ! [width "150px"]
-           +++ td (showSub s language "#00d") ! [width "150px"]
-           +++ td (showSub s project "#dd0"))
+showEntry :: EditStats -> Html
+showEntry s = tr (concatHtml $ map (\(f, c) -> td (f s) ! [theclass c]) funcs)
+  where funcs = [ (showTimes                    , "time"     ), 
+                  (toHtml . fileName            , "filename" ),
+                  (showExtension                , "extension"),
+                  (showSub language "matchlang" , "language" ),
+                  (showSub project  "matchproj" , "project"  ) ]
 
 
 showTimes s = if diff == (0, 0, 0) then noHtml
-                   else thespan (stringToHtml (showTime diff)) ! [thestyle "color:#00dd00;"]
+                   else thespan (stringToHtml (showTime diff)) 
    where diff = editTime s
 
-showExtension st = case extInformation st of { Nothing -> noHtml ; Just x -> (thespan (stringToHtml (concat [" [", x, "] "]))) ! [ thestyle "color:#dd00dd"] }
-showSub st f c = case f st of  
-                   Nothing -> noHtml 
-                   Just x -> (thespan (stringToHtml (concat [" {", fst x, ":", snd x, "} "]))) ! [ thestyle ("color:" ++ c)]
 
-showTimeE (Edit _ _ _ h m s _ _ _) = showTime (h, m, s)
-showTime (h, m, s) = concat [f h, ":", f m, ":", f s]
-  where f = printf "%02d"
+showExtension = maybe noHtml (\x -> thespan (toHtml (concat [" [", x, "] "]))) . extInformation
+
+showSub f c st = case f st of  
+                   Nothing -> noHtml 
+                   Just x -> thespan (stringToHtml (concat [" {", fst x, ":", snd x, "} "])) ! [theclass c]
+
+
+
+
+
+instance Printer Html where
+  printReport o a = prettyHtml $ a +++ reportStyle 
+
+
+
+
+
+
+
 
 
 --- DEBUG DEBUG DEBUG DEBUG --
 --
 fileToHTMLReport :: FilePath -> IO String
-fileToHTMLReport f = prettyHtml . (+++ reportStyle) <$> htmlFromFile f defaultIOSO
+fileToHTMLReport f = printReport defaultPO <$> htmlFromFile f defaultIOSO
 
 reportStyle = style $ stringToHtml "td { border: 1px solid #eee; }"
 
