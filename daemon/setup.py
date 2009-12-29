@@ -5,6 +5,6 @@ setup(name= "editor_time_chart_daemon",
     description = "Logs editor usage (and generates reports in the future)",
     author = "Bart Spaans",
     author_email = "onderstekop@gmail.com",
-    scripts=["timechartd.py"],
+    scripts=["timechartd.py", "timechart"],
     license="GPLv3",
     )
