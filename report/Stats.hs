@@ -12,6 +12,7 @@ import Edits
 import StatOptions
 import Maybe 
 import Control.Applicative
+import Control.Arrow
 import Data.List as L (groupBy, sort)
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
 import System.FilePath
@@ -45,7 +46,7 @@ slash = [pathSeparator]
 
 stats e e2 (SO ext lang proj home) = FS ex l p n t e
   where ex               = D.lookup (takeExtension f) ext
-        (l, p)           = both (fmap (\(a, (_, b)) -> (a, b))) la pr
+        (l, p)           = both (fmap (second snd)) la pr
         (la, pr)         = both (matchFile e) lang (maybe [] new la ++ proj)
         new (c, (fs, d)) = if d == slash then [] else [(fs ++ [d ++ slash] , d)]
         n                = if startsWith home f then replaceHome else f

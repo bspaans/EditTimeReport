@@ -8,6 +8,8 @@ module Report (
        , IndexedAlgebra, SIndexedAlgebra           -- Algebras
        , foldIR, report                            -- Fold and applied fold
        , indexAlgebra, indexFromFile               -- Indexed reports algebra
+       , tableExtensions, tableLanguages           -- Tables
+       , tableProjects, tableFilenames             -- Tables
        , module Stats
        ) where
 
@@ -145,7 +147,7 @@ tableFilenames  :: Report (TimeTable FilePath)
 sumTime         :: Stats -> (Int, Int, Int)
 
 
-table f = map (f . head &&& sumTime) . grouping f 
+table f         = map (f . head &&& sumTime) . grouping f 
 tableExtensions = table extInformation
 tableLanguages  = table language
 tableProjects   = table project
