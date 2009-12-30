@@ -6,18 +6,25 @@ module Printers ( Printer(printReport), PrintOptions
                  , months, headers     -- String data
                  , getMonth
                  , showTimeE, showTime -- Time strings
-                 , brackets, braced, showExtension
+                 , brackets, braced, showExtension, showSub, showLanguage, showProject
                  , module Report
                  ) where
+
 import Report
 import Text.Printf
+import Data.Monoid
 
 
 data PrintOptions = PO [ POption ]
 data POption      = StyleSheet String
                   | GenerateHeader deriving (Eq, Show)
 
-defaultPO = P 12
+instance Monoid PrintOptions where
+  mappend (PO a) (PO b) = PO $ mappend a b
+  mempty = PO []
+
+
+defaultPO = PO []
 
 
 class Printer a where 
@@ -51,3 +58,11 @@ braced   = enclose "{" "}"
 
 showExtension :: EditStats -> String
 showExtension = maybe "" brackets . extInformation
+
+showSub :: (EditStats -> Maybe (Description, String)) -> EditStats -> String
+showSub f = maybe "" a . f
+  where a (r, s) = braced $ r ++ ":" ++ s
+
+
+showLanguage = showSub language
+showProject  = showSub project

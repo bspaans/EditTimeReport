@@ -8,6 +8,7 @@ module Report (
        , IndexedAlgebra, SIndexedAlgebra           -- Algebras
        , foldIR, report                            -- Fold and applied fold
        , indexAlgebra, indexFromFile               -- Indexed reports algebra
+       , Table, TimeTable                          -- Tables
        , tableExtensions, tableLanguages           -- Tables
        , tableProjects, tableFilenames             -- Tables
        , module Stats
@@ -136,7 +137,7 @@ groupEditTimes  = grouping editTime
 -- Generates time tables from the groupings.
 --
 type Table a b = [(a, b)]
-type TimeTable a = [(a, Time)]
+type TimeTable a = Table a Time
 
 table           :: Ord a => (EditStats -> a) -> Report (TimeTable a)
 tableExtensions :: Report (TimeTable (Maybe Description))
@@ -150,6 +151,5 @@ tableExtensions = table extInformation
 tableLanguages  = table language
 tableProjects   = table project
 tableFilenames  = table fileName
-
 
 

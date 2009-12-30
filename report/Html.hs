@@ -43,33 +43,42 @@ showDay (day, stats) = tr (td (str day) +++ td (table $ header +++ map showEntry
 
 -- Converting EditStats to Html
 --
-showEntry    :: EditStats -> Html
-showExt      :: EditStats -> Html
-showSub      :: (EditStats -> Maybe(String, String)) -> String -> EditStats -> Html
-showLanguage :: EditStats -> Html
-showProject  :: EditStats -> Html
-showTimes    :: EditStats -> Html
+showEntry     :: EditStats -> Html
+showExt       :: EditStats -> Html
+showLanguage' :: EditStats -> Html
+showProject'  :: EditStats -> Html
+showTime'     :: EditStats -> Html
 
 
 showEntry s      = tr (concatHtml $ map a funcs)
   where a (f, c) = td (f s) ! [theclass c]
-        funcs    = [(showTimes, "time")
+        funcs    = [(showTime', "time")
                   , (toHtml . fileName, "filename")
                   , (showExt, "extension")
-                  , (showLanguage , "language" )
-                  , (showProject , "project") ]
+                  , (showLanguage' , "language" )
+                  , (showProject' , "project") ]
 
 
-showTimes s      = if editTime s == (0, 0, 0) then noHtml else sp 
-   where sp      = thespan (stringToHtml (showTime $ editTime s)) 
+showTime' s      = if editTime s == (0, 0, 0) then noHtml else sp 
+   where sp      = thespan (toHtml (showTime $ editTime s)) 
 
 
 showExt          = maybe noHtml (toSpan . brackets) . extInformation
-showLanguage     = showSub language "matchlang"
-showProject      = showSub project "matchproj"
-showSub f c      = maybe noHtml a . f
-   where a (r,s) = toSpan (braced $ concat [r, ":", s]) ! [theclass c] 
+showLanguage' s   = maybe noHtml (showSub' language "matchlang" s) (language s)
+showProject'  s   = maybe noHtml (showSub' project "matchproj"  s) (project s)
+showSub' f c s   = const $ toSpan (showSub f s) ! [theclass c]
 
+
+-- Tables
+--
+
+htmlTable :: Report (TimeTable a) -> (a -> Html) -> Report Html
+htmlTable r c = concatHtml . map row . r
+  where row (dat, time) = tr (td (c dat) +++ td (toHtml . showTime $ time))
+
+htmlExtensionTable :: Report Html
+htmlExtensionTable = htmlTable tableExtensions ext 
+  where ext = (maybe (toSpan "NONE") (toSpan . brackets))
 
 
 -- Helper functions
@@ -81,5 +90,5 @@ reportStyle :: Html
 header      = tr (concatHtml $ map (th . toHtml) headers)
 str         = toHtml . show
 toSpan      = thespan . toHtml
-reportStyle = style $ stringToHtml "td { border: 1px solid #eee; }"
+reportStyle = style $ toHtml "td { border: 1px solid #eee; }"
 
