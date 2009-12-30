@@ -1,11 +1,12 @@
-module Stats ( EditStats(extInformation, language
-                , project, fileName, editTime, edit) 
-             , Stats, stats
-             , both, startsWith
-             , module Calendar
-             , module StatOptions
-             , CalendarS, CalendarSAlgebra, calendarS 
-             , fromFile
+module Stats ( EditStats(extInformation, language        -- EditStats
+                , project, fileName, editTime, edit)     -- EditStats
+             , Stats, stats                              -- Stats
+             , both, startsWith                          -- Handy functions
+             , Time, Seconds, fromSeconds, toSeconds     -- Time
+             , sumTime, diffEdit                         -- Time
+             , CalendarS, CalendarSAlgebra, calendarS    -- CalendarS + algebra
+             , fromFile                                  -- Stats from file
+             , module Calendar , module StatOptions
              ) where 
 
 import Edits
@@ -36,7 +37,6 @@ type Stats      = [EditStats]
 --
 stats      :: Edit -> Edit -> StatOptions -> EditStats
 matchFile  :: Edit -> Matches -> Maybe (Description, Match)
-diffEdit   :: Edit -> Edit -> (Int, Int, Int)
 startsWith :: Eq a => [a] -> [a] -> Bool
 both       :: (a -> b) -> a -> a -> (b, b)
 
@@ -64,12 +64,26 @@ matchFile e ps           = snd <$> (listToMaybe . reverse . sort $ matches)
                 j        = Just (length fs, (c, (fs, path))) 
 
 
--- Get the time difference between two Edits.
+
+-- Times
 --
-diffEdit (Edit _ _ _ h m s _ _ _) (Edit _ _ _ h' m' s' _ _ _) = res
-  where res      = (div t ho, div (mod t ho) mi, mod (mod t ho) mi)
-        t        = (h' - h) * ho + (m' - m) * mi + s' - s
-        (mi, ho) = (60, mi * mi)
+diffEdit    :: Edit -> Edit -> (Int, Int, Int)
+toSeconds   :: Time -> Seconds
+fromSeconds :: Seconds -> Time
+sumTime     :: Stats -> (Int, Int, Int)
+
+
+type Seconds        = Int
+type Time           = (Int, Int, Int)
+
+
+diffEdit (Edit _ _ _ h m s _ _ _) (Edit _ _ _ h' m' s' _ _ _) = fromSeconds t
+     where t        = toSeconds (h', m', s') - toSeconds (h, m , s)
+
+
+toSeconds (h, m, s) = h * 3600 + m * 60 + s
+fromSeconds t       = (div t 3600, div (mod t 3600) 60, mod (mod t 3600) 60)
+sumTime             = fromSeconds . sum . map (toSeconds . editTime)
 
 
 

@@ -137,14 +137,12 @@ groupEditTimes  = grouping editTime
 --
 type Table a b = [(a, b)]
 type TimeTable a = [(a, Time)]
-type Time = (Int, Int, Int)
 
 table           :: Ord a => (EditStats -> a) -> Report (TimeTable a)
 tableExtensions :: Report (TimeTable (Maybe Description))
 tableLanguages  :: Report (TimeTable (Maybe (Description, String)))
 tableProjects   :: Report (TimeTable (Maybe (Description, String)))
 tableFilenames  :: Report (TimeTable FilePath)
-sumTime         :: Stats -> (Int, Int, Int)
 
 
 table f         = map (f . head &&& sumTime) . grouping f 
@@ -154,6 +152,4 @@ tableProjects   = table project
 tableFilenames  = table fileName
 
 
-sumTime = fromSeconds . sum . map (toSeconds . editTime)
-  where toSeconds (h, m, s) = h * 3600 + m * 60 + s
-        fromSeconds s = (div s 3600, div (mod s 3600) 60, mod (mod s 3600) 60)
+
