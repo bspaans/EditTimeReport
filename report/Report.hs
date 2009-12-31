@@ -38,8 +38,6 @@ type SReport  = Report SIndexedReport
 -- and day information in the parent node, 
 -- while keeping the payload data in the leafs.
 --
--- Note to self: what about Tree a b = Node a [Tree a b] | Leaf b
---
 newtype IndexedReport a b = IR (Indexed a b) deriving (Eq, Show)
 type    Indexed       a b = [IndexedY a b]
 type    IndexedY      a b = (a, [IndexedM a b])

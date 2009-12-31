@@ -51,14 +51,17 @@ Current status » Graphing
   Haskell and only makes use of the libraries in the Haskell Platform; 
   no other packages are needed. It can currently parse the log file, 
   do some analysis (like project and language classification) and produce 
-  HTML pagee in tabular format, but in the future this will 
-  become more interesting, and will be able to answer questions like:
+  HTML pages in tabular format. It can answer questions like:
 
    * how many hours did I spent on a project/file?
-   * what's my most productive time of the year/month/week/day?
-   * What language have I used the most this year?
+   * what language have I used the most this year?
    * what's that configuration file I had to edit eight months ago?
 
+  In the future this will extend to:
+
+   * what's my most productive day of the week?
+   * how much time did I work on year/month/week/day?
+   * ..and in which project or language?
 
 
 Current status » Building
