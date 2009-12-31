@@ -94,7 +94,7 @@ fromIR (IR ir) = ir
 --
 report        :: SReport
 indexAlgebra  :: CalendarSAlgebra SIndexedY SIndexedM SIndexedD SIndexedReport
-indexFromFile :: FilePath -> IO StatOptions -> IO SIndexedReport
+indexFromFile :: FilePath -> StatOptions -> IO SIndexedReport
 
 
 

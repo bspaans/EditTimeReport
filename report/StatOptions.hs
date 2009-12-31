@@ -3,6 +3,7 @@ module StatOptions ( StatOptions(SO, extensions, languages -- StatOptions
                    , Description, Extension, Extensions    -- Type synonyms
                    , SplitPath, Match, Matches             -- Type synonyms
                    , Languages, Projects                   -- Type synonyms
+                   , askStatOptions                        -- Interactive session
                    , defaultSO, defaultIOSO                -- Debugging SO's
                    ) where
 

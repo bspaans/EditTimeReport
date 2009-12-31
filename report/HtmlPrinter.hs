@@ -1,6 +1,6 @@
-module HtmlPrinter ( html, htmlFromFile   -- Convert SIndexedReports to Html table
-                   , printReport          -- Making an instance of Printer
-                   , fileToHTMLReport     -- Pretty printed Html
+module HtmlPrinter ( html          -- Convert SIndexedReports to Html table
+                   , printReport   -- Making an instance of Printer
+                   , htmlFromFile  -- Pretty printed Html
                    ) where
 
 import Printers
@@ -12,16 +12,13 @@ import Control.Applicative
 -- Converting SIndexedReports to tables using its fold
 --
 html             :: SIndexedReport -> Html
-htmlFromFile     :: FilePath -> IO StatOptions -> IO Html
 htmlAlgebra      :: SIndexedAlgebra Html Html Html Html
---fileToHTMLReport :: FilePath -> IO String
+htmlFromFile     :: FilePath -> PrintOptions -> StatOptions -> IO String
 
 
 html              = foldIR htmlAlgebra
-htmlFromFile f    = fmap html . indexFromFile f
 htmlAlgebra       = (concatHtml, showYear, showMonth, showDay)
-fileToHTMLReport f = prettyHtml <$> p 
-  where p = (printReport defaultPO <$> fromFile f defaultIOSO :: IO Html)
+htmlFromFile f p s= prettyHtml <$> (printReport p <$> fromFile f s :: IO Html)
 
 
 instance Printer Html where
@@ -91,13 +88,13 @@ htmlTable s r c u  = hr +++ p (table (h +++ (concatHtml . map row . r $ u)))
 
 
 htmlExtensionTable = htmlTable "Extension" tableExtensions ext 
-         where ext = toSpan . showExtension "NONE" 
+  where ext        = toSpan . showExtension "NONE" 
 
 htmlLanguageTable  = htmlTable "Language" tableLanguages lang 
-       where lang  = toHtml . showLanguage "NONE"
+  where lang       = toHtml . showLanguage "NONE"
 
 htmlProjectTable   = htmlTable "Project" tableProjects proj
-      where proj   = toHtml . showProject "NONE"
+  where proj       = toHtml . showProject "NONE"
 
 htmlFilenameTable  = htmlTable "Filename" tableFilenames toHtml
 

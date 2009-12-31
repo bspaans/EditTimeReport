@@ -1,5 +1,5 @@
 module Stats ( EditStats(extInformation, language        -- EditStats
-                , project, fileName, editTime, edit)     -- EditStats
+             , project, fileName, editTime, edit)        -- EditStats
              , Stats, stats                              -- Stats
              , both, startsWith                          -- Handy functions
              , Time, Seconds, fromSeconds, toSeconds     -- Time
@@ -104,13 +104,13 @@ type CalendarSAlgebra y m d r = CalendarAlgebra Stats y m d r
 
 calendarEtoS   :: StatOptions -> CalendarE -> CalendarS
 calendarS      :: StatOptions -> Edits -> CalendarS
-fromFile       :: FilePath -> IO StatOptions -> IO CalendarS
+fromFile       :: FilePath -> StatOptions -> IO CalendarS
 
 
 calendarEtoS so = fmap stat 
      where stat = map (\e -> stats (head e) (last e) so) . fileGroup 
 
 calendarS so    = calendarEtoS so . calendarE
-fromFile f so   = calendarS <$> so <*> parseFile f
+fromFile f so   = calendarS so <$> parseFile f
 
 
