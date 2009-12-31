@@ -7,6 +7,7 @@ module Query (
 import Stats
 import Printers
 import Data.List
+import Data.Function
 
 import Maybe
 
@@ -35,11 +36,10 @@ makeTree s q = Root (makeTree' s q (0,0,0))
 
 makeTree' :: Stats -> Queries -> Time -> [StatsTree]
 makeTree' s []         t  = [Leaf t]
-makeTree' s ((v,c, g):cs) t = if null yes then [makeNode (const "None") undefined (sumTime no) no cs]
-                                        else map (\e -> makeNode v e (editTime e) (filter (/=e) yes) cs) yes 
-                                            ++ [makeNode (const "None") undefined (sumTime no) no cs]
+makeTree' s ((v,c, g):cs) t = map (\gr -> makeNode (v . head $ gr) (sumTime gr) yes cs) (g . sortBy (compare `on` v) $ yes)
+                                      ++ [makeNode "None" (sumTime no) no cs]
    where (yes, no) = c s
 
-makeNode :: View -> EditStats -> Time -> Stats -> Queries -> StatsTree
-makeNode v s t yes cs = Node 0 (v s) (makeTree' yes cs t)
+makeNode :: String -> Time -> Stats -> Queries -> StatsTree
+makeNode s t yes cs = Node 0 s (makeTree' yes cs t)
 
