@@ -6,17 +6,19 @@ module HtmlPrinter ( html          -- Convert SIndexedReports to Html table
 import Printers
 import Text.XHtml hiding (header)
 import Control.Applicative
+import Data.List
+import Data.Function
 
 
 
 -- Converting SIndexedReports to tables using its fold
 --
-html             :: SIndexedReport -> Html
+html             :: PrintOptions -> SIndexedReport -> Html
 htmlAlgebra      :: SIndexedAlgebra Html Html Html Html
 htmlFromFile     :: FilePath -> PrintOptions -> StatOptions -> IO String
 
 
-html              = foldIR htmlAlgebra
+html p            = foldIR htmlAlgebra
 htmlAlgebra       = (concatHtml, showYear, showMonth, showDay)
 htmlFromFile f p s= prettyHtml <$> (printReport p <$> fromFile f s :: IO Html)
 
@@ -28,12 +30,12 @@ instance Printer Html where
           lang = test PrintLanguageTable htmlLanguageTable
           proj = test PrintProjectTable htmlProjectTable
           name = test PrintFilenameTable htmlFilenameTable 
-          ind  = test PrintSIndexed  (html . report)
+          ind  = test PrintSIndexed  (\o f -> html o . report $ f)
           year = test PrintYearTable htmlYearTable
           mont = test PrintMonthTable htmlMonthTable
           day  = test PrintDayTable htmlDayTable
           dow  = test PrintDayofWeekTable htmlDayofWeekTable
-          test p f = if p `isSet` opts then f cs else noHtml
+          test p f = if p `isSet` opts then f opts cs else noHtml
 
 
 --Convert years, months and days to Html
@@ -80,7 +82,7 @@ showSub'    c s   = toSpan (showSub s) ! [theclass c]
 
 -- Tables
 --
-type HReport = Report Html
+type HReport = PrintOptions -> Report Html
 htmlTable          :: String -> Report (TimeTable a) -> (a -> Html) -> HReport
 htmlExtensionTable :: HReport
 htmlLanguageTable  :: HReport
@@ -92,25 +94,37 @@ htmlDayTable       :: HReport
 htmlDayofWeekTable :: HReport
 
 
-htmlTable s r c u  = hr +++ p (table (h +++ (concatHtml . map row . r $ u)))
-  where row (d, t) = tr (td (c d) +++ td (toHtml . showTime $ t))
-        h          = tr (th  (toHtml s) +++ th (toHtml "Time"))
+htmlTable s r c op u = hr +++ p (table (h +++ (concatHtml . map row $ process u)))
+  where row (d, t)   = tr (td (c d) +++ td (toHtml . showTime $ t))
+        h            = tr (th  (toHtml s) +++ th (toHtml "Time"))
+        process      = if SortedAsc `isSet` op then sortBy (compare `on` snd) . r
+                         else if SortedDesc `isSet` op then reverse . sortBy (compare `on` snd) . r
+                                else r
 
 
-htmlExtensionTable = htmlTable "Extension" tableExtensions ext 
-  where ext        = toSpan . showExtension "NONE" 
+htmlExtensionTable   = htmlTable "Extension" tableExtensions ext 
+  where ext          = toSpan . showExtension "NONE" 
 
-htmlLanguageTable  = htmlTable "Language" tableLanguages lang 
-  where lang       = toHtml . showLanguage "NONE"
+htmlLanguageTable    = htmlTable "Language" tableLanguages lang 
+  where lang         = toHtml . showLanguage "NONE"
 
-htmlProjectTable   = htmlTable "Project" tableProjects proj
-  where proj       = toHtml . showProject "NONE"
+htmlProjectTable     = htmlTable "Project" tableProjects proj
+  where proj         = toHtml . showProject "NONE"
 
-htmlFilenameTable  = htmlTable "Filename" tableFilenames toHtml
-htmlYearTable      = htmlTable "Year" tableYear str
-htmlMonthTable     = htmlTable "Month" tableMonth (toHtml . getMonth)
-htmlDayTable       = htmlTable "Day" tableDay str
-htmlDayofWeekTable = htmlTable "Day of the Week" tableDayofWeek (toHtml . getDow)
+htmlFilenameTable    = htmlTable "Filename" tableFilenames toHtml
+htmlYearTable        = htmlTable "Year" tableYear str 
+htmlMonthTable       = htmlTable "Month" tableMonth (toHtml . getMonth) 
+htmlDayTable         = htmlTable "Day" tableDay str 
+htmlDayofWeekTable   = htmlTable "Day of the Week" tableDayofWeek (toHtml . getDow) 
+
+
+-- StatsTree to Html table
+--
+treeToHtml :: StatsTree -> Html
+treeToHtml = foldTree (root, node, leaf)
+  where root ns = table (concatHtml . map tr $ ns)
+        node cspan s ns = (td (toHtml s) ! [colspan cspan]) +++ table (concatHtml (map tr ns))
+        leaf = td . toHtml . showTime
 
 
 -- Helper functions

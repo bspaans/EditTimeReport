@@ -7,6 +7,7 @@ module Stats ( EditStats(extInformation, language        -- EditStats
              , CalendarS, CalendarSAlgebra, calendarS    -- CalendarS + algebra
              , grouping, groupExtensions, groupLanguages -- Groupings
              , groupProjects, groupFilenames             -- Groupings
+             , StatsTree(..), StatsTreeAlgebra, foldTree     -- Tree
              , fromFile                                  -- Stats from file
              , module Calendar , module StatOptions
              ) where 
@@ -144,3 +145,20 @@ groupLanguages  = grouping language
 groupProjects   = grouping project
 groupFilenames  = grouping fileName
 groupEditTimes  = grouping editTime
+
+
+-- Stats — Trees
+--
+
+data StatsTree = Root [StatsTree] | Node Int String [StatsTree] | Leaf Time
+
+type StatsTreeAlgebra r  = ([r] -> r 
+                          , Int -> String -> [r] ->r
+                          , Time -> r)
+
+foldTree :: StatsTreeAlgebra r -> StatsTree -> r
+foldTree (root, node, leaf) = f
+  where f (Root tr) = root (map f tr)
+        f (Node i s tr) = node i s (map f tr)
+        f (Leaf e)      = leaf e
+

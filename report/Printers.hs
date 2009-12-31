@@ -15,6 +15,7 @@ module Printers ( Printer(printReport)
 import Report
 import Text.Printf
 import Data.Monoid
+import Control.Arrow
 
 
 data PrintOptions = PO [ POption ]
@@ -29,6 +30,8 @@ data POption      = StyleSheet String
                   | PrintMonthTable
                   | PrintDayTable
                   | PrintDayofWeekTable
+                  | SortedAsc
+                  | SortedDesc
                   deriving (Eq, Show)
 
 instance Monoid PrintOptions where
@@ -45,7 +48,7 @@ defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }" -- Should actually b
 
 printAllPO = PO [ PrintSIndexed, PrintExtensionTable
               , PrintLanguageTable, PrintProjectTable 
-              , PrintFilenameTable, PrintYearTable, 
+              , PrintFilenameTable, PrintYearTable
               , PrintMonthTable, PrintDayTable 
               , PrintDayofWeekTable]
 
@@ -101,3 +104,19 @@ showExtension' n = showExtension n . extInformation
 showLanguage  n = maybe n showSub 
 showProject   n = maybe n showSub 
 showExtension n = maybe n brackets
+
+
+-- TimeTable a to TimeTable String
+--
+tableS f t = map (first (f)) . t
+tableExtensionsS = tableS (showExtension "NONE") tableExtensions
+tableLanguagesS  = tableS (showLanguage "NONE") tableLanguages
+tableProjectsS   = tableS (showProject "NONE") tableProjects
+tableFilenamesS  = tableFilenames
+tableYearS       = tableS show tableYear
+tableMonthS      = tableS show tableMonth
+tableDayS        = tableS show tableDay
+tableDayofWeekS  = tableS show tableDayofWeek
+
+
+

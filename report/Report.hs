@@ -135,3 +135,6 @@ tableDay        = table (day . edit)
 tableDayofWeek  = table (dow . edit)
 
 
+tableToTree :: TimeTable String -> StatsTree
+tableToTree t = Root nodes
+  where nodes = map (\(s, time) -> Node 1 s [Leaf time]) t
