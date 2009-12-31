@@ -1,7 +1,7 @@
-module Html ( html, htmlFromFile   -- Convert SIndexedReports to Html table
-            , printReport          -- Making an instance of Printer
-            , fileToHTMLReport     -- Pretty printed Html
-            ) where
+module HtmlPrinter ( html, htmlFromFile   -- Convert SIndexedReports to Html table
+                   , printReport          -- Making an instance of Printer
+                   , fileToHTMLReport     -- Pretty printed Html
+                   ) where
 
 import Printers
 import Text.XHtml hiding (header)
@@ -85,7 +85,7 @@ htmlProjectTable   :: Report Html
 htmlFilenameTable  :: Report Html
 
 
-htmlTable s r c u  = table (h +++ (concatHtml . map row . r $ u))
+htmlTable s r c u  = hr +++ p (table (h +++ (concatHtml . map row . r $ u)))
   where row (d, t) = tr (td (c d) +++ td (toHtml . showTime $ t))
         h          = tr (th  (toHtml s) +++ th (toHtml "Time"))
 

@@ -3,7 +3,7 @@ module Main where
 
 -- Currently only implemented HTML reports
 --
-import Html
+import HtmlPrinter
 import System ( getArgs )
 
 

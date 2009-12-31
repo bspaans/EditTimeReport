@@ -34,7 +34,7 @@ instance Monoid PrintOptions where
 
 isSet op (PO opts) = elem op opts
 
-defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }"
+defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }" -- Should actually be a file though
               , PrintSIndexed, PrintExtensionTable
               , PrintLanguageTable, PrintProjectTable 
               , PrintFilenameTable]
