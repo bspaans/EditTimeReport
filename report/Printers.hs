@@ -5,7 +5,7 @@ module Printers ( Printer(printReport)
                  , isSet, defaultPO
                  , touched
                  , months, headers     -- String data
-                 , getMonth
+                 , getMonth, getDow 
                  , showTimeE, showTime -- Time strings
                  , brackets, braced, showSub, showLanguage, showProject
                  , showExtension
@@ -43,6 +43,11 @@ defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }" -- Should actually b
               , PrintLanguageTable, PrintProjectTable 
               , PrintFilenameTable, PrintMonthTable, PrintDayofWeekTable]
 
+printAllPO = PO [ PrintSIndexed, PrintExtensionTable
+              , PrintLanguageTable, PrintProjectTable 
+              , PrintFilenameTable, PrintYearTable, 
+              , PrintMonthTable, PrintDayTable 
+              , PrintDayofWeekTable]
 
 
 class Printer a where 
@@ -53,9 +58,17 @@ touched = map (file . edit)
 
 months :: [String]
 headers :: [String]
+days :: [String]
+getMonth :: Int -> String
+getDow :: Int -> String
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-getMonth n = months !! (n - 1)
+getMonth n = months !! ((min 12 (max 1 n)) - 1)
+
+days = ["Sunday", "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday"]
+getDow n = days !! min 6 (max 0 n)
+
 headers = ["Time", "File", "Extension", "Language", "Project"]
 
 

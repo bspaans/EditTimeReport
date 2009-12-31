@@ -108,9 +108,9 @@ htmlProjectTable   = htmlTable "Project" tableProjects proj
 
 htmlFilenameTable  = htmlTable "Filename" tableFilenames toHtml
 htmlYearTable      = htmlTable "Year" tableYear str
-htmlMonthTable     = htmlTable "Month" tableYear (toHtml . getMonth)
+htmlMonthTable     = htmlTable "Month" tableMonth (toHtml . getMonth)
 htmlDayTable       = htmlTable "Day" tableDay str
-htmlDayofWeekTable = htmlTable "Day of the Week" tableDayofWeek str
+htmlDayofWeekTable = htmlTable "Day of the Week" tableDayofWeek (toHtml . getDow)
 
 
 -- Helper functions
