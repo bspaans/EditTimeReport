@@ -8,7 +8,7 @@ module Stats ( EditStats(extInformation, language        -- EditStats
              , grouping, groupExtensions, groupLanguages -- Groupings
              , groupProjects, groupFilenames             -- Groupings
              , StatsTree(..), StatsTreeAlgebra, foldTree     -- Tree
-             , fromFile                                  -- Stats from file
+             , fromFile, statsFromFile                       -- Stats from file
              , module Calendar , module StatOptions
              ) where 
 
@@ -110,14 +110,14 @@ type CalendarSAlgebra y m d r = CalendarAlgebra Stats y m d r
 calendarEtoS   :: StatOptions -> CalendarE -> CalendarS
 calendarS      :: StatOptions -> Edits -> CalendarS
 fromFile       :: FilePath -> StatOptions -> IO CalendarS
-
+statsFromFile  :: FilePath -> StatOptions -> IO Stats
 
 calendarEtoS so = fmap stat 
      where stat = map (\e -> stats (head e) (last e) so) . fileGroup 
 
-calendarS so    = calendarEtoS so . calendarE
-fromFile f so   = calendarS so <$> parseFile f
-
+calendarS so       = calendarEtoS so . calendarE
+fromFile f so      = calendarS so <$> parseFile f
+statsFromFile f so = concat . flatten . calendarS so <$> parseFile f
 
 
 -- Groupings
@@ -151,6 +151,7 @@ groupEditTimes  = grouping editTime
 --
 
 data StatsTree = Root [StatsTree] | Node Int String [StatsTree] | Leaf Time
+                    deriving (Eq, Show)
 
 type StatsTreeAlgebra r  = ([r] -> r 
                           , Int -> String -> [r] ->r
