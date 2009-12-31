@@ -22,12 +22,17 @@ htmlFromFile f p s= prettyHtml <$> (printReport p <$> fromFile f s :: IO Html)
 
 
 instance Printer Html where
-  printReport opts cs = reportStyle +++ exts +++ lang +++ proj +++ name +++ ind
+  printReport opts cs = reportStyle +++ year +++ mont +++ day +++ dow
+          +++ exts +++ lang +++ proj +++ name +++ ind
     where exts = test PrintExtensionTable htmlExtensionTable
           lang = test PrintLanguageTable htmlLanguageTable
           proj = test PrintProjectTable htmlProjectTable
           name = test PrintFilenameTable htmlFilenameTable 
           ind  = test PrintSIndexed  (html . report)
+          year = test PrintYearTable htmlYearTable
+          mont = test PrintMonthTable htmlMonthTable
+          day  = test PrintDayTable htmlDayTable
+          dow  = test PrintDayofWeekTable htmlDayofWeekTable
           test p f = if p `isSet` opts then f cs else noHtml
 
 
@@ -75,11 +80,16 @@ showSub'    c s   = toSpan (showSub s) ! [theclass c]
 
 -- Tables
 --
-htmlTable          :: String -> Report (TimeTable a) -> (a -> Html) -> Report Html
-htmlExtensionTable :: Report Html
-htmlLanguageTable  :: Report Html
-htmlProjectTable   :: Report Html
-htmlFilenameTable  :: Report Html
+type HReport = Report Html
+htmlTable          :: String -> Report (TimeTable a) -> (a -> Html) -> HReport
+htmlExtensionTable :: HReport
+htmlLanguageTable  :: HReport
+htmlProjectTable   :: HReport
+htmlFilenameTable  :: HReport
+htmlYearTable      :: HReport
+htmlMonthTable     :: HReport
+htmlDayTable       :: HReport
+htmlDayofWeekTable :: HReport
 
 
 htmlTable s r c u  = hr +++ p (table (h +++ (concatHtml . map row . r $ u)))
@@ -97,7 +107,10 @@ htmlProjectTable   = htmlTable "Project" tableProjects proj
   where proj       = toHtml . showProject "NONE"
 
 htmlFilenameTable  = htmlTable "Filename" tableFilenames toHtml
-
+htmlYearTable      = htmlTable "Year" tableYear str
+htmlMonthTable     = htmlTable "Month" tableYear (toHtml . getMonth)
+htmlDayTable       = htmlTable "Day" tableDay str
+htmlDayofWeekTable = htmlTable "Day of the Week" tableDayofWeek str
 
 
 -- Helper functions

@@ -25,6 +25,10 @@ data POption      = StyleSheet String
                   | PrintLanguageTable
                   | PrintProjectTable
                   | PrintFilenameTable
+                  | PrintYearTable
+                  | PrintMonthTable
+                  | PrintDayTable
+                  | PrintDayofWeekTable
                   deriving (Eq, Show)
 
 instance Monoid PrintOptions where
@@ -37,7 +41,7 @@ isSet op (PO opts) = elem op opts
 defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }" -- Should actually be a file though
               , PrintSIndexed, PrintExtensionTable
               , PrintLanguageTable, PrintProjectTable 
-              , PrintFilenameTable]
+              , PrintFilenameTable, PrintMonthTable, PrintDayofWeekTable]
 
 
 

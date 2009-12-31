@@ -11,6 +11,8 @@ module Report (
        , Table, TimeTable                          -- Tables
        , tableExtensions, tableLanguages           -- Tables
        , tableProjects, tableFilenames             -- Tables
+       , tableYear, tableMonth                     -- Tables
+       , tableDay, tableDayofWeek                  -- Tables
        , module Stats
        ) where
 
@@ -116,6 +118,10 @@ tableExtensions :: Report (TimeTable (Maybe Description))
 tableLanguages  :: Report (TimeTable (Maybe (Description, String)))
 tableProjects   :: Report (TimeTable (Maybe (Description, String)))
 tableFilenames  :: Report (TimeTable FilePath)
+tableYear       :: Report (TimeTable Int)
+tableMonth      :: Report (TimeTable Int)
+tableDay        :: Report (TimeTable Int)
+tableDayofWeek  :: Report (TimeTable Int)
 
 
 table f         = map (f . head &&& sumTime) . grouping f 
@@ -123,5 +129,9 @@ tableExtensions = table extInformation
 tableLanguages  = table language
 tableProjects   = table project
 tableFilenames  = table fileName
+tableYear       = table (year . edit)
+tableMonth      = table (month . edit)
+tableDay        = table (day . edit)
+tableDayofWeek  = table (dow . edit)
 
 
