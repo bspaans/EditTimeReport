@@ -14,18 +14,24 @@ import Control.Applicative
 html             :: SIndexedReport -> Html
 htmlFromFile     :: FilePath -> IO StatOptions -> IO Html
 htmlAlgebra      :: SIndexedAlgebra Html Html Html Html
-fileToHTMLReport :: FilePath -> IO String
+--fileToHTMLReport :: FilePath -> IO String
 
 
 html              = foldIR htmlAlgebra
 htmlFromFile f    = fmap html . indexFromFile f
 htmlAlgebra       = (concatHtml, showYear, showMonth, showDay)
-fileToHTMLReport f = printReport defaultPO <$> htmlFromFile f defaultIOSO
+fileToHTMLReport f = prettyHtml <$> p 
+  where p = (printReport defaultPO <$> fromFile f defaultIOSO :: IO Html)
 
 
 instance Printer Html where
-  printReport o a = prettyHtml $ a +++ reportStyle 
-
+  printReport opts cs = reportStyle +++ exts +++ lang +++ proj +++ name +++ ind
+    where exts = test PrintExtensionTable htmlExtensionTable
+          lang = test PrintLanguageTable htmlLanguageTable
+          proj = test PrintProjectTable htmlProjectTable
+          name = test PrintFilenameTable htmlFilenameTable 
+          ind  = test PrintSIndexed  (html . report)
+          test p f = if p `isSet` opts then f cs else noHtml
 
 
 --Convert years, months and days to Html

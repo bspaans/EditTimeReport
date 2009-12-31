@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Printers ( Printer(printReport), PrintOptions
-                 , defaultPO
+module Printers ( Printer(printReport)
+                 , PrintOptions(..), POption (..)
+                 , isSet, defaultPO
                  , touched
                  , months, headers     -- String data
                  , getMonth
@@ -18,18 +19,30 @@ import Data.Monoid
 
 data PrintOptions = PO [ POption ]
 data POption      = StyleSheet String
-                  | GenerateHeader deriving (Eq, Show)
+                  | GenerateHeader
+                  | PrintSIndexed
+                  | PrintExtensionTable
+                  | PrintLanguageTable
+                  | PrintProjectTable
+                  | PrintFilenameTable
+                  deriving (Eq, Show)
 
 instance Monoid PrintOptions where
   mappend (PO a) (PO b) = PO $ mappend a b
   mempty = PO []
 
 
-defaultPO = PO []
+isSet op (PO opts) = elem op opts
+
+defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }"
+              , PrintSIndexed, PrintExtensionTable
+              , PrintLanguageTable, PrintProjectTable 
+              , PrintFilenameTable]
+
 
 
 class Printer a where 
-  printReport :: PrintOptions -> a -> String
+  printReport :: PrintOptions -> CalendarS -> a 
 
 
 touched = map (file . edit)
