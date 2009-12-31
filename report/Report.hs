@@ -19,8 +19,6 @@ import Stats
 import Text.PrettyPrint
 import Control.Arrow
 import Control.Applicative
-import Data.List
-import Data.Function
 
 
 -- Type Synonyms — Reports
@@ -105,30 +103,6 @@ indexAlgebra   = (IR, y, mon, days)
         sh     = snd . head
 
 indexFromFile f so  = report <$> fromFile f so 
-
-
-
--- Groupings
--- The following functions do grouping on 
--- the methods in EditStats. For grouping 
--- on Edits see Edits.hs.
---
-type Grouping = CalendarS -> [Stats]
-
-grouping :: Ord a => (EditStats -> a) -> Grouping
-grouping f = groupWith f . sortBy (compare `on` f) . concat  .  flatten
-
-groupExtensions :: Grouping
-groupLanguages  :: Grouping
-groupProjects   :: Grouping
-groupFilenames  :: Grouping
-groupEditTimes  :: Grouping
-
-groupExtensions = grouping extInformation
-groupLanguages  = grouping language
-groupProjects   = grouping project
-groupFilenames  = grouping fileName
-groupEditTimes  = grouping editTime
 
 
 -- Tables

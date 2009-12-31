@@ -5,6 +5,8 @@ module Stats ( EditStats(extInformation, language        -- EditStats
              , Time, Seconds, fromSeconds, toSeconds     -- Time
              , sumTime, diffEdit                         -- Time
              , CalendarS, CalendarSAlgebra, calendarS    -- CalendarS + algebra
+             , grouping, groupExtensions, groupLanguages -- Groupings
+             , groupProjects, groupFilenames             -- Groupings
              , fromFile                                  -- Stats from file
              , module Calendar , module StatOptions
              ) where 
@@ -18,6 +20,8 @@ import Data.List as L (groupBy, sort)
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
 import System.FilePath
 import Calendar
+import Data.List
+import Data.Function
 
 
 
@@ -114,3 +118,29 @@ calendarS so    = calendarEtoS so . calendarE
 fromFile f so   = calendarS so <$> parseFile f
 
 
+
+-- Groupings
+-- The following functions do grouping on 
+-- the methods in EditStats. For grouping 
+-- on Edits see Edits.hs.
+--
+type Grouping = CalendarS -> [Stats]
+
+grouping :: Ord a => (EditStats -> a) -> Grouping
+grouping f = groupWith f . sortBy (compare `on` f) . concat  .  flatten
+
+
+
+-- Unused atm:
+--
+groupExtensions :: Grouping
+groupLanguages  :: Grouping
+groupProjects   :: Grouping
+groupFilenames  :: Grouping
+groupEditTimes  :: Grouping
+
+groupExtensions = grouping extInformation
+groupLanguages  = grouping language
+groupProjects   = grouping project
+groupFilenames  = grouping fileName
+groupEditTimes  = grouping editTime
