@@ -1,18 +1,21 @@
 module Query (
+             makeTree
 
 
              ) where
 
 import Stats
 import Printers
+import Data.List
 
 import Maybe
 
 
 type Queries = [Query]
-type Query = (View, Constraint)
+type Query = (View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
 type View = EditStats -> String
+type Group = Stats -> [Stats]
 
 
 
@@ -23,27 +26,20 @@ makeConstraint p = con ([], [])
         con (yes, no) (s:st) = con n st
           where n = if p s then (s : yes, no) else (yes, s:no)
 
-langQ = (showLanguage "NONE" . language, makeConstraint (isJust . language))
+langQ = (showLanguage "NONE" . language, makeConstraint (isJust . language), groupWith language)
 
 
 makeTree :: Stats -> Queries -> StatsTree
-makeTree s q = Root (makeTree' s q)
+makeTree s q = Root (makeTree' s q (0,0,0))
                   
 
-makeTree' :: Stats -> Queries -> [StatsTree]
-makeTree' s []         = []
-makeTree' s ((v,c):cs) = if null yes then [makeNode (const "None") undefined no cs]
-                                     else map (\e -> makeNode v e yes cs) yes
+makeTree' :: Stats -> Queries -> Time -> [StatsTree]
+makeTree' s []         t  = [Leaf t]
+makeTree' s ((v,c, g):cs) t = if null yes then [makeNode (const "None") undefined (sumTime no) no cs]
+                                        else map (\e -> makeNode v e (editTime e) (filter (/=e) yes) cs) yes 
+                                            ++ [makeNode (const "None") undefined (sumTime no) no cs]
    where (yes, no) = c s
 
-makeNode :: View -> EditStats -> Stats -> Queries -> StatsTree
-makeNode v s yes cs = if null cs then Node 1 (v s) [Leaf (sumTime yes)]
-                                 else Node 0 (v s) (makeTree' yes cs)
+makeNode :: View -> EditStats -> Time -> Stats -> Queries -> StatsTree
+makeNode v s t yes cs = Node 0 (v s) (makeTree' yes cs t)
 
-
-{-
-makeNode :: EditStats -> Query -> Stats -> Queries -> StatsTree
-makeNode e (v, c) (s, n) [] = Node 1 (v e) [Leaf (sumTime n)]
-makeNode e (v, c) (s, n) cs = Node 0 (v e) [(makeTree s cs)]
-
--}
