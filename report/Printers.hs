@@ -6,7 +6,8 @@ module Printers ( Printer(printReport), PrintOptions
                  , months, headers     -- String data
                  , getMonth
                  , showTimeE, showTime -- Time strings
-                 , brackets, braced, showExtension, showSub, showLanguage, showProject
+                 , brackets, braced, showSub, showLanguage, showProject
+                 , showExtension
                  , module Report
                  ) where
 
@@ -56,13 +57,17 @@ braced   = enclose "{" "}"
 
 
 
-showExtension :: EditStats -> String
-showExtension = maybe "" brackets . extInformation
 
-showSub :: (EditStats -> Maybe (Description, String)) -> EditStats -> String
-showSub f = maybe "" a . f
-  where a (r, s) = braced $ r ++ ":" ++ s
+showSub :: (Description, String) -> String
+showSub (r, s) = braced $ r ++ ":" ++ s
 
+{-
+showExtension' :: String -> EditStats -> String
+showLanguage' n = showLanguage n . language
+showProject' n = showProject n . project
+showExtension' n = showExtension n . extInformation
+-}
 
-showLanguage = showSub language
-showProject  = showSub project
+showLanguage  n = maybe n showSub 
+showProject   n = maybe n showSub 
+showExtension n = maybe n brackets

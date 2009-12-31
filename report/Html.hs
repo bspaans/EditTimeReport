@@ -63,22 +63,38 @@ showTime' s      = if editTime s == (0, 0, 0) then noHtml else sp
    where sp      = thespan (toHtml (showTime $ editTime s)) 
 
 
-showExt          = maybe noHtml (toSpan . brackets) . extInformation
-showLanguage' s   = maybe noHtml (showSub' language "matchlang" s) (language s)
-showProject'  s   = maybe noHtml (showSub' project "matchproj"  s) (project s)
-showSub' f c s   = const $ toSpan (showSub f s) ! [theclass c]
+showExt           = maybe noHtml (toSpan . brackets) . extInformation
+showLanguage'     = maybe noHtml (showSub' "matchlang") . language 
+showProject'      = maybe noHtml (showSub' "matchproj") . project 
+showSub'    c s   = toSpan (showSub s) ! [theclass c]
+
 
 
 -- Tables
 --
-
-htmlTable :: Report (TimeTable a) -> (a -> Html) -> Report Html
-htmlTable r c = concatHtml . map row . r
-  where row (dat, time) = tr (td (c dat) +++ td (toHtml . showTime $ time))
-
+htmlTable          :: String -> Report (TimeTable a) -> (a -> Html) -> Report Html
 htmlExtensionTable :: Report Html
-htmlExtensionTable = htmlTable tableExtensions ext 
-  where ext = (maybe (toSpan "NONE") (toSpan . brackets))
+htmlLanguageTable  :: Report Html
+htmlProjectTable   :: Report Html
+htmlFilenameTable  :: Report Html
+
+
+htmlTable s r c u  = table (h +++ (concatHtml . map row . r $ u))
+  where row (d, t) = tr (td (c d) +++ td (toHtml . showTime $ t))
+        h          = tr (th  (toHtml s) +++ th (toHtml "Time"))
+
+
+htmlExtensionTable = htmlTable "Extension" tableExtensions ext 
+         where ext = toSpan . showExtension "NONE" 
+
+htmlLanguageTable  = htmlTable "Language" tableLanguages lang 
+       where lang  = toHtml . showLanguage "NONE"
+
+htmlProjectTable   = htmlTable "Project" tableProjects proj
+      where proj   = toHtml . showProject "NONE"
+
+htmlFilenameTable  = htmlTable "Filename" tableFilenames toHtml
+
 
 
 -- Helper functions
