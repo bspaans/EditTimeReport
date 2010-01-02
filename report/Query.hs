@@ -16,10 +16,11 @@ type View = EditStats -> String
 type Group = Stats -> [Stats]
 
 interactiveQueries :: Stats -> IO()
-interactiveQueries stats = do print "> "
+interactiveQueries stats = do putStr "> " 
                               s <- getLine
                               if s == "q" then return ()
-                                          else do print $ treeFromQuery s stats
+                                          else do putStrLn $ treeToString (treeFromQuery s stats)
+                                                  print (treeFromQuery s stats)
                                                   interactiveQueries stats
 
 
@@ -92,12 +93,17 @@ makeTree q s = Root (makeTree' s q (0,0,0))
 makeTree' :: Stats -> Query -> Time -> [StatsTree]
 makeTree' s []         t  = [Leaf t]
 makeTree' s ((v,c, g):cs) t = if null yes then if no /= [] then [makeNode "None" (sumTime no) no cs] else []
-                                else map (\gr -> makeNode (v . head $ gr) (sumTime gr) yes cs) (g . sortBy (compare `on` v) $ yes)
+                                else map (\gr -> makeNode (v . head $ gr) (sumTime gr) gr cs) (g . sortBy (compare `on` v) $ yes)
                                       ++ if no /= [] then [makeNode "None" (sumTime no) no cs] else []
    where (yes, no) = c s
 
 makeNode :: String -> Time -> Stats -> Query -> StatsTree
-makeNode s t yes cs = Node 0 s (makeTree' yes cs t)
+makeNode s t yes cs = Node (n tr) s tr
+  where tr = makeTree' yes cs t
+        n [] = 0
+        n ((Node i _ _):cs) = i + n cs
+        n ((Leaf _):cs) = 1 + n cs
+       
 
 
 treeFromQuery :: String -> Stats -> StatsTree

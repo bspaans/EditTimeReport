@@ -8,7 +8,7 @@ module Printers ( Printer(printReport)
                  , getMonth, getDow 
                  , showTimeE, showTime -- Time strings
                  , brackets, braced, showSub, showLanguage, showProject
-                 , showExtension
+                 , showExtension, treeToString
                  , module Report
                  ) where
 
@@ -119,4 +119,8 @@ tableDayS        = tableS show tableDay
 tableDayofWeekS  = tableS show tableDayofWeek
 
 
-
+treeToString :: StatsTree -> String
+treeToString = foldTree (root, node, leaf)
+  where root = concat
+        node cspan s ns = printf "  %-10s" s ++ concatMap (" "++) ns
+        leaf t = showTime t ++ "\n"
