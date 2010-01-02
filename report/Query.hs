@@ -1,11 +1,10 @@
-module Query (
+module QueryToTree (
              makeTree
-
-
              ) where
 
 import Stats
 import Printers
+import QueryParser
 import Data.List
 import Data.Function
 

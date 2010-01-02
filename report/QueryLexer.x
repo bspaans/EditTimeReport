@@ -22,7 +22,7 @@ tokens :-
   "("         { \s -> TParenOpen        } 
   ")"         { \s -> TParenClose       } 
   ","         { \s -> TComma            }
-  "*"         { \s -> TMultiply         }
+  "*"         { \s -> TProduct          }
   extension   { \s -> TExtension        } 
   language    { \s -> TLanguage         } 
   project     { \s -> TProject          } 

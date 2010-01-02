@@ -4,7 +4,7 @@ module QueryParser
 import QueryLexer
 }
 
-%name constraintParser
+%name queryParser
 
 %tokentype { Token      }
 %error     { parseError }
@@ -13,13 +13,14 @@ import QueryLexer
 %token 
   '>'       { TL          } 
   '<'       { TM          } 
-  '<=       { TLE         } 
+  '<='      { TLE         } 
   '>='      { TME         } 
   '!='      { TNEqual     } 
   '=='      { TEqual      } 
   '('       { TParenOpen  } 
   ')'       { TParenClose } 
   ','       { TComma      } 
+  '*'       { TProduct    }
   extension { TExtension  } 
   language  { TLanguage   } 
   project   { TProject    } 
@@ -39,56 +40,71 @@ import QueryLexer
 %%
 
 
-QUERY : SUBQUERIES         { }
-      | SUBQUERIES QPREFIX { } 
-      |                    { }
+QUERY : SUBQUERIES QPREFIX { ($1, $2)    } 
+      |                    { ([], Empty) }
 
 
-SUBQUERIES : SUBQUERY
-	   | SUBQUERIES '*' SUBQUERY
+SUBQUERIES : SUBQUERY                 { [$1]     }
+	   | SUBQUERIES '*' SUBQUERY  { $1 ++ $3 }
 
-SUBQUERY : GROUP TABLE CONSTRAINTS
+SUBQUERY : GROUP TABLE CONSTRAINTS { SubQuery $1 $2 $3 }
 
 GROUP : group             { True  }
       |                   { False }
 
-TABLE : extension         { }
-      | language          { } 
-      | project           { }
-      | filename          { }
-      | year              { }
-      | month             { } 
-      | day               { }
-      | dow               { } 
-      | doy               { }
+TABLE : extension         { Ext   }
+      | language          { Lang  } 
+      | project           { Proj  } 
+      | filename          { File  } 
+      | year              { Year  } 
+      | month             { Month } 
+      | day               { Day   } 
+      | dow               { Dow   } 
+      | doy               { Doy   } 
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
 
-CONS : CONSTRAINT | CONS ',' CONSTRAINT {    }
-     |                                  { [] }
+CONS : CONSTRAINT                       { [$1]     }
+     | CONS ',' CONSTRAINT              { $1 ++ $3 }
+     |                                  { []       }
 
-CONSTRAINT : TABLE OPERATOR EXPR
+CONSTRAINT : TABLE OPERATOR EXPR        { Constraint $1 $2 $3 }
 
-OPERATOR : '<'           { }
-	 | '>'           { }
-	 | '<='          { }
-	 | '>='          { }
-	 | '=='          { }
-	 | '!='          { }
+OPERATOR : '<'           { <  }
+	 | '>'           { >  }
+	 | '<='          { >= }
+	 | '>='          { <= }
+	 | '=='          { == }
+	 | '!='          { /= }
 
-EXPR : integer           { $1 }
+EXPR : integer           { QInt $1 }
 
-QPREFIX : asc            { }
-	| desc           { }
+QPREFIX : asc            { Asc  }
+	| desc           { Desc }
+        |                { Empty }
 
 {
 
+type QQuery = ([QSubQuery], QPrefix)
+
+data QSubQuery = SubQuery Bool QTable [QConstraint]
+
+data QPrefix = Empty | Asc | Desc
+
+data QTable = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
+
+data QConstraint = Constraint QTable (Ord a => a -> a -> Bool) QExpr
+
+data QExpr = QInt Int 
+
+
 parseError   :: [Token]  -> a
-parseProgram :: String   -> Program 
-parseFile    :: FilePath -> IO Program
+parseProgram :: String   -> QQuery
+parseFile    :: FilePath -> IO QQuery
 
 parseError _ = error "Parse error"
-parseProgram = constraintParser . alexScanTokens
-parseFile f  = readFile f >>= return . parseProgram
+parseProgram = queryParser . alexScanTokens
+parseFile f  = readFile f >>= return . queryParser
+parseQuery = queryParser
 
 }
