@@ -8,12 +8,12 @@ import Data.Function
 import Maybe
 
 
-type Queries = [Query]
-type Query = [SubQuery]
-type SubQuery = (View, Constraint, Group)
+type Queries    = [Query]
+type Query      = [SubQuery]
+type SubQuery   = (View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
-type View = EditStats -> String
-type Group = Stats -> [Stats]
+type View       = EditStats -> String
+type Group      = Stats -> [Stats]
 
 
 
@@ -43,18 +43,18 @@ fromQOper        :: Ord a =>  QOper -> (a -> a -> Bool)
 fromQQuery (qs, postfix) = map fromQSubQuery qs
 
 
-fromQSubQuery (QSubQuery gr Ext cons)   = makeQuery gr Ext cons extInformation
-fromQSubQuery (QSubQuery gr Lang cons)  = makeQuery gr Lang cons language
-fromQSubQuery (QSubQuery gr Proj cons)  = makeQuery gr Proj cons project
-fromQSubQuery (QSubQuery gr File cons)  = makeQuery gr File cons fileName
-fromQSubQuery (QSubQuery gr Year cons)  = makeQuery gr Year cons (year . edit)
-fromQSubQuery (QSubQuery gr Month cons) = makeQuery gr Month cons (month . edit)
-fromQSubQuery (QSubQuery gr Day cons)   = makeQuery gr Day cons (day . edit)
-fromQSubQuery (QSubQuery gr Dow cons)   = makeQuery gr Dow cons (dow . edit)
-fromQSubQuery (QSubQuery gr Doy cons)   = makeQuery gr Doy cons (doy . edit)
+fromQSubQuery (QSubQuery gr Ext   cons )  = makeQuery gr Ext   cons extInformation
+fromQSubQuery (QSubQuery gr Lang  cons )  = makeQuery gr Lang  cons language
+fromQSubQuery (QSubQuery gr Proj  cons )  = makeQuery gr Proj  cons project
+fromQSubQuery (QSubQuery gr File  cons )  = makeQuery gr File  cons fileName
+fromQSubQuery (QSubQuery gr Year  cons )  = makeQuery gr Year  cons (year . edit)
+fromQSubQuery (QSubQuery gr Month cons )  = makeQuery gr Month cons (month . edit)
+fromQSubQuery (QSubQuery gr Day   cons )  = makeQuery gr Day   cons (day . edit)
+fromQSubQuery (QSubQuery gr Dow   cons )  = makeQuery gr Dow   cons (dow . edit)
+fromQSubQuery (QSubQuery gr Doy   cons )  = makeQuery gr Doy   cons (doy . edit)
 
 
-makeQuery gr t c f       = (fromQTable t, fromQConstraints c, addGrouping gr f)
+makeQuery gr t c f  = (fromQTable t, fromQConstraints c, addGrouping gr f)
 
 
 addGrouping False _ = dontGroup
@@ -113,9 +113,7 @@ makeNode      :: String -> Stats -> Query -> StatsTree
 treeFromQuery :: String -> Stats -> StatsTree
 
 makeTree q s  = Root (makeTree' s q (0,0,0))
-treeFromQuery = makeTree . fromQQuery . parseQuery 
  
-
 
 -- TODO: add sorting and totals
 --
@@ -132,7 +130,10 @@ makeNode s yes cs = Node (n tr) s tr
         n [] = 0       -- Count children
         n ((Node i _ _):cs) = i + n cs
         n ((Leaf _):cs) = 1 + n cs
-       
+ 
+
+treeFromQuery = makeTree . fromQQuery . parseQuery 
+
 
 {-
  

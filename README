@@ -117,8 +117,8 @@ Installing the Daemon and Client
   That's it!
 
 
-Installing the Graph Tool
--------------------------
+Installing the Reporting Tool
+-----------------------------
 
   As said, this program is not finished yet, but if you want to have a 
   look at its current (pre-alpha) state, you can compile it using 
@@ -140,4 +140,4 @@ Installing the Graph Tool
     report edittime.log
 
   See the bottom of Query.hs for a description of the grammar and 
-  some examples.
+  some usage examples.
