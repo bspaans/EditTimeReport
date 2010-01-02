@@ -153,13 +153,12 @@ groupEditTimes  = grouping editTime
 data StatsTree = Root [StatsTree] | Node Int String [StatsTree] | Leaf Time
                     deriving (Eq, Show)
 
-type StatsTreeAlgebra r  = ([r] -> r 
-                          , Int -> String -> [r] ->r
-                          , Time -> r)
+type StatsTreeAlgebra r n = ([n] -> r 
+                          , Int -> String -> [n] -> n
+                          , Time -> n)
 
-foldTree :: StatsTreeAlgebra r -> StatsTree -> r
-foldTree (root, node, leaf) = f
-  where f (Root tr) = root (map f tr)
-        f (Node i s tr) = node i s (map f tr)
+foldTree :: StatsTreeAlgebra r n -> StatsTree -> r
+foldTree (root, node, leaf) (Root tr) = root (map f tr)
+  where f (Node i s tr) = node i s (map f tr)
         f (Leaf e)      = leaf e
 

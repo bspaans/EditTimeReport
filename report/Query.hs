@@ -20,7 +20,6 @@ interactiveQueries stats = do putStr "> "
                               s <- getLine
                               if s == "q" then return ()
                                           else do putStrLn $ treeToString (treeFromQuery s stats)
-                                                  print (treeFromQuery s stats)
                                                   interactiveQueries stats
 
 
@@ -53,9 +52,9 @@ fromQConstraint :: QConstraint -> Pred EditStats
 fromQConstraint (QConstraint Ext oper expr) = maybe False (\e -> fromQOper oper e $ fromQExpression expr) . extInformation 
 
 fromQTable :: QTable -> (EditStats -> String)
-fromQTable Ext  = fromMaybe "" . extInformation
-fromQTable Lang = maybe "" snd . language
-fromQTable Proj = maybe "" snd . project
+fromQTable Ext  = fromMaybe "None" . extInformation
+fromQTable Lang = maybe "None" snd . language
+fromQTable Proj = maybe "None" snd . project
 fromQTable File = fileName
 fromQTable Year = show . year . edit
 fromQTable Month = show . month . edit

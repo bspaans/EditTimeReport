@@ -118,9 +118,20 @@ tableMonthS      = tableS show tableMonth
 tableDayS        = tableS show tableDay
 tableDayofWeekS  = tableS show tableDayofWeek
 
+treeToString :: StatsTree -> String
+treeToString (Root ns) = concatMap (tts' 2) ns
+  where tts' lvl (Node _ s tr) = "\n" ++ replicate (lvl * 2) ' ' ++ printf "%-40s" s ++ concatMap (tts' (lvl + 1)) tr
+        tts' lvl (Leaf time) = replicate (lvl * 2) ' ' ++ showTime time
 
+{-
 treeToString :: StatsTree -> String
 treeToString = foldTree (root, node, leaf)
-  where root = concat
-        node cspan s ns = printf "  %-10s" s ++ concatMap (" "++) ns
-        leaf t = showTime t ++ "\n"
+  where root = map (showTree 0)
+        node cspan s ns = (s, ns)
+          where n = maximum (map fst ns)
+        leaf t = (showTime t ++ "\n", [])
+        showTree lvl (s, [])     = replicate (lvl * 2) ' ' ++ s
+        showTree lvl (s, childs) = replicate (lvl * 2) ' ' ++ s ++ showTree (lvl + 1) childs
+        
+
+-}
