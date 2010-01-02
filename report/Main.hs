@@ -17,7 +17,9 @@ main = do args <- getArgs
             then usage
             else do so <- askStatOptions
                     if length args == 1 then htmlFromFile (head args) po so >>= putStrLn
-                                        else htmlFromFile (head args) po so >>= writeFile (args !! 1)
+                                        else if length args == 2 && args !! 1 /= "-i" then htmlFromFile (head args) po so >>= writeFile (args !! 1)
+								else do s <- statsFromFile (head args) so
+								        interactiveQueries s
 
 
 

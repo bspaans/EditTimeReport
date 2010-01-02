@@ -66,6 +66,7 @@ TABLE : extension         { Ext   }
       | doy               { Doy   } 
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
+	    |               { [] } 
 
 CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
@@ -92,7 +93,7 @@ type QQuery = ([QSubQuery], QPostfix)
 
 data QSubQuery = QSubQuery Bool QTable [QConstraint]
 
-data QPostfix = Empty | Asc | Desc
+data QPostfix = Empty | Asc | Desc | Limit Int
 
 data QTable = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
 

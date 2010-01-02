@@ -1,4 +1,4 @@
-module Query ( makeTree) where
+module Query ( makeTree, interactiveQueries ) where
 
 import Stats
 import Printers
@@ -15,6 +15,12 @@ type Constraint = Stats -> (Stats, Stats)
 type View = EditStats -> String
 type Group = Stats -> [Stats]
 
+interactiveQueries :: Stats -> IO()
+interactiveQueries stats = do print "> "
+                              s <- getLine
+                              if s == "q" then return ()
+                                          else do print $ treeFromQuery s stats
+                                                  interactiveQueries stats
 
 
 fromQQuery :: QQuery -> Query
@@ -64,7 +70,8 @@ makeTree q s = Root (makeTree' s q (0,0,0))
 -- TODO: add sorting and totals?
 makeTree' :: Stats -> Query -> Time -> [StatsTree]
 makeTree' s []         t  = [Leaf t]
-makeTree' s ((v,c, g):cs) t = map (\gr -> makeNode (v . head $ gr) (sumTime gr) yes cs) (g . sortBy (compare `on` v) $ yes)
+makeTree' s ((v,c, g):cs) t = if null yes then [makeNode "None" (sumTime no) no cs]
+                                else map (\gr -> makeNode (v . head $ gr) (sumTime gr) yes cs) (g . sortBy (compare `on` v) $ yes)
                                       ++ [makeNode "None" (sumTime no) no cs]
    where (yes, no) = c s
 
