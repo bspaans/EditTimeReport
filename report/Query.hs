@@ -17,6 +17,38 @@ type Group = Stats -> [Stats]
 
 
 
+fromQQuery :: QQuery -> Query
+fromQQuery (qs, postfix) = map fromQSubQuery qs
+
+fromQSubQuery :: QSubQuery -> SubQuery
+fromQSubQuery (QSubQuery gr Ext cons) = (fromQTable Ext, fromQConstraints cons
+                                        , addGrouping gr extInformation)
+
+addGrouping :: Eq a => Bool -> (EditStats -> a) -> Group
+addGrouping False _ = dontGroup
+addGrouping True  f = groupWith f
+                                          
+fromQConstraints :: [QConstraint] -> Constraint
+fromQConstraints qc = makeConstraint $ foldr (\a b -> \p -> a p && b p) (const True) q
+  where q = map fromQConstraint qc
+
+fromQConstraint :: QConstraint -> Pred EditStats
+fromQConstraint (QConstraint Ext oper expr) = maybe False (\e -> fromQOper oper e $ fromQExpression expr) . extInformation 
+
+fromQTable :: QTable -> (EditStats -> String)
+fromQTable Ext  = fromMaybe "" . extInformation
+fromQTable Lang = maybe "" fst . language
+
+fromQExpression :: QExpr -> String
+fromQExpression (QInt i) = show i
+
+fromQOper QL = (<)
+fromQOper QLE = (<=)
+
+
+
+dontGroup xs = [xs]
+
 makeConstraint :: Pred EditStats -> Constraint
 makeConstraint p = con ([], [])
   where con (yes, no) [] = (yes, no)
@@ -26,8 +58,8 @@ makeConstraint p = con ([], [])
 langQ = (showLanguage "NONE" . language, makeConstraint (isJust . language), groupWith language)
 
 
-makeTree :: Stats -> Query -> StatsTree
-makeTree s q = Root (makeTree' s q (0,0,0))
+makeTree :: Query -> Stats -> StatsTree
+makeTree q s = Root (makeTree' s q (0,0,0))
                   
 -- TODO: add sorting and totals?
 makeTree' :: Stats -> Query -> Time -> [StatsTree]
@@ -38,6 +70,10 @@ makeTree' s ((v,c, g):cs) t = map (\gr -> makeNode (v . head $ gr) (sumTime gr) 
 
 makeNode :: String -> Time -> Stats -> Query -> StatsTree
 makeNode s t yes cs = Node 0 s (makeTree' yes cs t)
+
+
+treeFromQuery :: String -> Stats -> StatsTree
+treeFromQuery = makeTree . fromQQuery . parseQuery 
 
 {-
  

@@ -1,5 +1,8 @@
 {
-module QueryParser where
+module QueryParser (QQuery, QConstraint(..), QSubQuery(..)
+                   , QOper(..), QExpr(..)
+                   , QTable(..), parseQuery
+                   ) where
 
 import QueryLexer
 }
@@ -47,7 +50,7 @@ QUERY : SUBQUERIES QPREFIX { ($1, $2)    }
 SUBQUERIES : SUBQUERY                 { [$1]        }
 	   | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
 
-SUBQUERY : GROUP TABLE CONSTRAINTS { SubQuery $1 $2 $3 }
+SUBQUERY : GROUP TABLE CONSTRAINTS { QSubQuery $1 $2 $3 }
 
 GROUP : group             { True  }
       |                   { False }
@@ -68,7 +71,7 @@ CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
      |                                  { []         }
 
-CONSTRAINT : TABLE OPERATOR EXPR        { Constraint $1 $2 $3 }
+CONSTRAINT : TABLE OPERATOR EXPR        { QConstraint $1 $2 $3 }
 
 OPERATOR : '<'           { QL  }
 	 | '>'           { QG  }
@@ -85,15 +88,15 @@ QPREFIX : asc            { Asc  }
 
 {
 
-type QQuery = ([QSubQuery], QPrefix)
+type QQuery = ([QSubQuery], QPostfix)
 
-data QSubQuery = SubQuery Bool QTable [QConstraint]
+data QSubQuery = QSubQuery Bool QTable [QConstraint]
 
-data QPrefix = Empty | Asc | Desc
+data QPostfix = Empty | Asc | Desc
 
 data QTable = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
 
-data QConstraint = Constraint QTable QOper QExpr
+data QConstraint = QConstraint QTable QOper QExpr
 
 data QOper = QL | QLE | QG | QGE | QE | QNE
 
