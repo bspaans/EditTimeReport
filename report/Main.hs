@@ -5,6 +5,7 @@ module Main where
 --
 import HtmlPrinter
 import Printers
+import Query
 import System ( getArgs )
 
 

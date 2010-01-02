@@ -1,6 +1,4 @@
-module QueryToTree (
-             makeTree
-             ) where
+module Query ( makeTree) where
 
 import Stats
 import Printers

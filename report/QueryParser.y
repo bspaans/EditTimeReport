@@ -1,13 +1,13 @@
 {
-module QueryParser
+module QueryParser where
 
 import QueryLexer
 }
 
 %name queryParser
 
-%tokentype { Token      }
-%error     { parseError }
+%tokentype { ConstraintToken }
+%error     { parseError      }
 
 
 %token 
@@ -44,8 +44,8 @@ QUERY : SUBQUERIES QPREFIX { ($1, $2)    }
       |                    { ([], Empty) }
 
 
-SUBQUERIES : SUBQUERY                 { [$1]     }
-	   | SUBQUERIES '*' SUBQUERY  { $1 ++ $3 }
+SUBQUERIES : SUBQUERY                 { [$1]        }
+	   | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
 
 SUBQUERY : GROUP TABLE CONSTRAINTS { SubQuery $1 $2 $3 }
 
@@ -64,18 +64,18 @@ TABLE : extension         { Ext   }
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
 
-CONS : CONSTRAINT                       { [$1]     }
-     | CONS ',' CONSTRAINT              { $1 ++ $3 }
-     |                                  { []       }
+CONS : CONSTRAINT                       { [$1]       }
+     | CONS ',' CONSTRAINT              { $1 ++ [$3] }
+     |                                  { []         }
 
 CONSTRAINT : TABLE OPERATOR EXPR        { Constraint $1 $2 $3 }
 
-OPERATOR : '<'           { <  }
-	 | '>'           { >  }
-	 | '<='          { >= }
-	 | '>='          { <= }
-	 | '=='          { == }
-	 | '!='          { /= }
+OPERATOR : '<'           { QL  }
+	 | '>'           { QG  }
+	 | '<='          { QLE }
+	 | '>='          { QGE }
+	 | '=='          { QE  }
+	 | '!='          { QNE }
 
 EXPR : integer           { QInt $1 }
 
@@ -93,18 +93,19 @@ data QPrefix = Empty | Asc | Desc
 
 data QTable = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
 
-data QConstraint = Constraint QTable (Ord a => a -> a -> Bool) QExpr
+data QConstraint = Constraint QTable QOper QExpr
+
+data QOper = QL | QLE | QG | QGE | QE | QNE
 
 data QExpr = QInt Int 
 
 
-parseError   :: [Token]  -> a
-parseProgram :: String   -> QQuery
+parseError   :: [ConstraintToken]  -> a
+parseQuery   :: String   -> QQuery
 parseFile    :: FilePath -> IO QQuery
 
 parseError _ = error "Parse error"
-parseProgram = queryParser . alexScanTokens
-parseFile f  = readFile f >>= return . queryParser
-parseQuery = queryParser
+parseQuery   = queryParser . alexScanTokens
+parseFile f  = readFile f >>= return . parseQuery
 
 }

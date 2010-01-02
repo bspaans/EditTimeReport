@@ -50,13 +50,14 @@ data ConstraintToken = TExtension
                      | TDay
                      | TDow
                      | TDoy
+					 | TGroup
                      | TAscending
                      | TDescending
                      | TLimit
                      | TParenOpen
                      | TParenClose
                      | TComma
-                     | TMultiply
+                     | TProduct
                      | TEqual
                      | TNEqual
                      | TL          
