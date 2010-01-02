@@ -29,6 +29,10 @@ fromQQuery (qs, postfix) = map fromQSubQuery qs
 fromQSubQuery :: QSubQuery -> SubQuery
 fromQSubQuery (QSubQuery gr Ext cons) = (fromQTable Ext, fromQConstraints cons
                                         , addGrouping gr extInformation)
+fromQSubQuery (QSubQuery gr Lang cons) = help gr Lang cons language
+
+help gr t c f = (fromQTable t, fromQConstraints c, addGrouping gr f)
+
 
 addGrouping :: Eq a => Bool -> (EditStats -> a) -> Group
 addGrouping False _ = dontGroup
