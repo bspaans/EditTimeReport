@@ -13,9 +13,8 @@ EditTimeChart [think of better name later]
   1. Scriptable editors contact a permanently running daemon on each 
      save/close/whatever.
   2. The daemon logs the commands to a flat plain text file. 
-  3. Have a separate tool to generate reports (in plain text, html, 
-     graphics,..) from the logs without having to do any manual work.
-
+  3. Have a separate tool to generate reports from the logs (in plain text, 
+     html, graphs,..) without having to do any manual work.
 
 
 Current status » Daemon
