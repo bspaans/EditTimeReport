@@ -67,10 +67,14 @@ fromQExpression (QInt i) = show i
 
 fromQOper QL = (<)
 fromQOper QLE = (<=)
+fromQOper QG = (>)
+fromQOper QGE = (>=)
+fromQOper QE = (==)
+fromQOper QNE = (/=)
 
 
 
-dontGroup xs = [xs]
+dontGroup xs = map (:[]) xs
 
 makeConstraint :: Pred EditStats -> Constraint
 makeConstraint p = con ([], [])
@@ -87,9 +91,9 @@ makeTree q s = Root (makeTree' s q (0,0,0))
 -- TODO: add sorting and totals?
 makeTree' :: Stats -> Query -> Time -> [StatsTree]
 makeTree' s []         t  = [Leaf t]
-makeTree' s ((v,c, g):cs) t = if null yes then [makeNode "None" (sumTime no) no cs]
+makeTree' s ((v,c, g):cs) t = if null yes then if no /= [] then [makeNode "None" (sumTime no) no cs] else []
                                 else map (\gr -> makeNode (v . head $ gr) (sumTime gr) yes cs) (g . sortBy (compare `on` v) $ yes)
-                                      ++ [makeNode "None" (sumTime no) no cs]
+                                      ++ if no /= [] then [makeNode "None" (sumTime no) no cs] else []
    where (yes, no) = c s
 
 makeNode :: String -> Time -> Stats -> Query -> StatsTree
