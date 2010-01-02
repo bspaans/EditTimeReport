@@ -1,5 +1,5 @@
 ¡¡¡¡¡¡ work in progress !!!!!!!
-
+status: pre-alpha
 
 
 EditTimeChart [think of better name later]
@@ -10,11 +10,11 @@ EditTimeChart [think of better name later]
 
   The idea:
 
-  1. There is a permanently running daemon that logs commands to a file
-  2. Scriptable editors contact the daemon on each save/close/whatever.
-  3. We can graph our work, without having to do any manual work.
-  4. ???
-  5. PROFIT (literally!)
+  1. Scriptable editors contact a permanently running daemon on each 
+     save/close/whatever.
+  2. The daemon logs the commands to a flat plain text file. 
+  3. Have a separate tool to generate reports (in plain text, html, 
+     graphics,..) from the logs without having to do any manual work.
 
 
 
@@ -44,22 +44,24 @@ Current status » Client
   directory. It's called `timechart' at the moment, but this may change
 
 
-Current status » Graphing
--------------------------
+Current status » Generating Reports
+-----------------------------------
 
-  The graphing program is still under heavy development. It is written in 
+  The reporting program is still under heavy development. It is written in 
   Haskell and only makes use of the libraries in the Haskell Platform; 
   no other packages are needed. It can currently parse the log file, 
   do some analysis (like project and language classification) and produce 
-  HTML pages in tabular format. It can answer questions like:
+  HTML and plain text pages in tabular format. It also has a simple DSL 
+  comparable to SQL (but much, much simpler) to query the data.  
+  It can answer questions like:
 
    * how many hours did I spent on a project/file?
    * what language have I used the most this year?
    * what's that configuration file I had to edit eight months ago?
+   * what's my most productive day of the week?
 
   In the future this will extend to:
 
-   * what's my most productive day of the week?
    * how much time did I work on year/month/week/day?
    * ..and in which project or language?
 
@@ -131,5 +133,12 @@ Installing the Graph Tool
 
   To produce a HTML report of the log file, you can then run:
 
-    report edittime.log 
+    report edittime.log log.html
 
+  To get into an interactive session where you can query the log 
+  file, use:
+
+    report edittime.log
+
+  See the bottom of Query.hs for a description of the grammar and 
+  some examples.
