@@ -5,8 +5,8 @@ import Printers
 import QueryParser
 import Data.List
 import Data.Function
-
 import Maybe
+
 
 type Queries = [Query]
 type Query = [SubQuery]
@@ -15,98 +15,124 @@ type Constraint = Stats -> (Stats, Stats)
 type View = EditStats -> String
 type Group = Stats -> [Stats]
 
+
+
+-- Query prompt
+--
 interactiveQueries :: Stats -> IO()
-interactiveQueries stats = do putStr "> " 
-                              s <- getLine
-                              if s == "q" then return ()
-                                          else do putStrLn $ treeToString (treeFromQuery s stats)
-                                                  interactiveQueries stats
+interactiveQueries stats = 
+  do putStr "> " ; s <- getLine
+     if s == "q" then return ()
+                 else do putStrLn $ treeToString (treeFromQuery s stats)
+                         interactiveQueries stats
 
 
-fromQQuery :: QQuery -> Query
+
+-- Convert Parsed QQuery to Query
+--
+fromQQuery       :: QQuery -> Query
+fromQSubQuery    :: QSubQuery -> SubQuery
+fromQConstraints :: [QConstraint] -> Constraint
+fromQConstraint  :: QConstraint -> Pred EditStats
+fromQTable       :: QTable -> (EditStats -> String)
+fromQExpression  :: QExpr -> String
+addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
+fromQOper        :: Ord a =>  QOper -> (a -> a -> Bool)
+
+
 fromQQuery (qs, postfix) = map fromQSubQuery qs
 
-fromQSubQuery :: QSubQuery -> SubQuery
-fromQSubQuery (QSubQuery gr Ext cons) = help gr Ext cons extInformation
-fromQSubQuery (QSubQuery gr Lang cons) = help gr Lang cons language
-fromQSubQuery (QSubQuery gr Proj cons) = help gr Proj cons project
-fromQSubQuery (QSubQuery gr File cons) = help gr File cons fileName
-fromQSubQuery (QSubQuery gr Year cons) = help gr Year cons (year . edit)
-fromQSubQuery (QSubQuery gr Month cons) = help gr Month cons (month . edit)
-fromQSubQuery (QSubQuery gr Day cons) = help gr Day cons (day . edit)
-fromQSubQuery (QSubQuery gr Dow cons) = help gr Dow cons (dow . edit)
-fromQSubQuery (QSubQuery gr Doy cons) = help gr Doy cons (doy . edit)
 
-help gr t c f = (fromQTable t, fromQConstraints c, addGrouping gr f)
+fromQSubQuery (QSubQuery gr Ext cons)   = makeQuery gr Ext cons extInformation
+fromQSubQuery (QSubQuery gr Lang cons)  = makeQuery gr Lang cons language
+fromQSubQuery (QSubQuery gr Proj cons)  = makeQuery gr Proj cons project
+fromQSubQuery (QSubQuery gr File cons)  = makeQuery gr File cons fileName
+fromQSubQuery (QSubQuery gr Year cons)  = makeQuery gr Year cons (year . edit)
+fromQSubQuery (QSubQuery gr Month cons) = makeQuery gr Month cons (month . edit)
+fromQSubQuery (QSubQuery gr Day cons)   = makeQuery gr Day cons (day . edit)
+fromQSubQuery (QSubQuery gr Dow cons)   = makeQuery gr Dow cons (dow . edit)
+fromQSubQuery (QSubQuery gr Doy cons)   = makeQuery gr Doy cons (doy . edit)
 
 
-addGrouping :: Ord a => Bool -> (EditStats -> a) -> Group
+makeQuery gr t c f       = (fromQTable t, fromQConstraints c, addGrouping gr f)
+
+
 addGrouping False _ = dontGroup
 addGrouping True  f = groupWith f . sortBy (compare `on` f)
-                                          
-fromQConstraints :: [QConstraint] -> Constraint
-fromQConstraints qc = makeConstraint $ foldr (\a b -> \p -> a p && b p) (const True) q
-  where q = map fromQConstraint qc
 
-fromQConstraint :: QConstraint -> Pred EditStats
-fromQConstraint (QConstraint Ext oper expr) = maybe False (\e -> fromQOper oper e $ fromQExpression expr) . extInformation 
 
-fromQTable :: QTable -> (EditStats -> String)
-fromQTable Ext  = fromMaybe "None" . extInformation
-fromQTable Lang = maybe "None" snd . language
-fromQTable Proj = maybe "None" snd . project
-fromQTable File = fileName
-fromQTable Year = show . year . edit
+fromQConstraints qc = makeConstraint $ foldr (\a b p -> a p && b p) (const True) q
+  where q           = map fromQConstraint qc
+
+
+fromQConstraint (QConstraint Ext oper expr) = maybe False f . extInformation 
+  where f e = fromQOper oper e $ fromQExpression expr
+
+
+fromQTable Ext   = fromMaybe "None" . extInformation
+fromQTable Lang  = maybe "None" snd . language
+fromQTable Proj  = maybe "None" snd . project
+fromQTable File  = fileName
+fromQTable Year  = show . year . edit
 fromQTable Month = show . month . edit
-fromQTable Day = show . day . edit
-fromQTable Dow = show . dow . edit
-fromQTable Doy = show . doy . edit
+fromQTable Day   = show . day . edit
+fromQTable Dow   = show . dow . edit
+fromQTable Doy   = show . doy . edit
 
-fromQExpression :: QExpr -> String
+
 fromQExpression (QInt i) = show i
 
-fromQOper QL = (<)
+
+fromQOper QL  = (<)
+fromQOper QG  = (>)
 fromQOper QLE = (<=)
-fromQOper QG = (>)
 fromQOper QGE = (>=)
-fromQOper QE = (==)
+fromQOper QE  = (==)
 fromQOper QNE = (/=)
 
 
+dontGroup = map (:[]) 
 
-dontGroup xs = map (:[]) xs
 
+
+-- Make Constraint out of predicate
+--
 makeConstraint :: Pred EditStats -> Constraint
 makeConstraint p = con ([], [])
   where con (yes, no) [] = (yes, no)
         con (yes, no) (s:st) = con n st
           where n = if p s then (s : yes, no) else (yes, s:no)
 
-langQ = (showLanguage "NONE" . language, makeConstraint (isJust . language), groupWith language)
 
 
-makeTree :: Query -> Stats -> StatsTree
-makeTree q s = Root (makeTree' s q (0,0,0))
-                  
--- TODO: add sorting and totals?
-makeTree' :: Stats -> Query -> Time -> [StatsTree]
-makeTree' s []         t  = [Leaf t]
-makeTree' s ((v,c, g):cs) t = if null yes then if no /= [] then [makeNode "None" (sumTime no) no cs] else []
-                                else map (\gr -> makeNode (v . head $ gr) (sumTime gr) gr cs) (g yes)
-                                      ++ if no /= [] then [makeNode "None" (sumTime no) no cs] else []
-   where (yes, no) = c s
+-- Get the Tree corresponding to the Query on Stats
+--
+makeTree      :: Query -> Stats -> StatsTree
+makeTree'     :: Stats -> Query -> Time -> [StatsTree]
+makeNode      :: String -> Stats -> Query -> StatsTree
+treeFromQuery :: String -> Stats -> StatsTree
 
-makeNode :: String -> Time -> Stats -> Query -> StatsTree
-makeNode s t yes cs = Node (n tr) s tr
-  where tr = makeTree' yes cs t
-        n [] = 0
+makeTree q s  = Root (makeTree' s q (0,0,0))
+treeFromQuery = makeTree . fromQQuery . parseQuery 
+ 
+
+
+-- TODO: add sorting and totals
+--
+makeTree' s []            t = [Leaf t]
+makeTree' s ((v,c, g):cs) t = 
+  if null yes then nomatch
+    else map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) ++ nomatch
+  where (yes, no) = c s
+        nomatch   = if null no then [] else [makeNode "None" no cs]
+
+
+makeNode s yes cs = Node (n tr) s tr
+  where tr = makeTree' yes cs (sumTime yes)
+        n [] = 0       -- Count children
         n ((Node i _ _):cs) = i + n cs
         n ((Leaf _):cs) = 1 + n cs
        
-
-
-treeFromQuery :: String -> Stats -> StatsTree
-treeFromQuery = makeTree . fromQQuery . parseQuery 
 
 {-
  
@@ -120,6 +146,8 @@ treeFromQuery = makeTree . fromQQuery . parseQuery
    4.   group language limit 5
    5.   group language ascending
    6.   group language (time >= 3 months ago)
+
+ Last example is not yet implemented.
 
  in (pseudo?) SQL: 
     
@@ -150,3 +178,4 @@ treeFromQuery = makeTree . fromQQuery . parseQuery
             , ascending, descending, asc, desc, limit, '(', ')', ',', '==', '<='
             , '<', '>', '>=', '!=', '/=', '*'
  -}
+

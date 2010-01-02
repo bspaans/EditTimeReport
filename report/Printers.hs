@@ -94,12 +94,10 @@ braced   = enclose "{" "}"
 showSub :: (Description, String) -> String
 showSub (r, s) = braced $ r ++ ":" ++ s
 
-{-
 showExtension' :: String -> EditStats -> String
 showLanguage' n = showLanguage n . language
 showProject' n = showProject n . project
 showExtension' n = showExtension n . extInformation
--}
 
 showLanguage  n = maybe n showSub 
 showProject   n = maybe n showSub 
@@ -118,20 +116,13 @@ tableMonthS      = tableS show tableMonth
 tableDayS        = tableS show tableDay
 tableDayofWeekS  = tableS show tableDayofWeek
 
-treeToString :: StatsTree -> String
-treeToString (Root ns) = concatMap (tts' 1) ns
-  where tts' lvl (Node _ s tr) = "\n" ++ replicate (lvl * 4) ' ' ++ printf "%-70s" s ++ concatMap (tts' (lvl + 1)) tr
-        tts' lvl (Leaf time) = replicate (lvl * 2) ' ' ++ showTime time
 
-{-
-treeToString :: StatsTree -> String
-treeToString = foldTree (root, node, leaf)
-  where root = map (showTree 0)
-        node cspan s ns = (s, ns)
-          where n = maximum (map fst ns)
-        leaf t = (showTime t ++ "\n", [])
-        showTree lvl (s, [])     = replicate (lvl * 2) ' ' ++ s
-        showTree lvl (s, childs) = replicate (lvl * 2) ' ' ++ s ++ showTree (lvl + 1) childs
-        
 
--}
+
+treeToString :: StatsTree -> String
+treeToString (Root ns) = concatMap (tts' 1) ns ++ "\n"
+  where tts' lvl (Leaf time) = showTime time
+        tts' lvl (Node _ s tr) = '\n' : replicate (lvl * 4) ' ' 
+                              ++ printf "%-70s" s 
+                              ++ concatMap (tts' (lvl + 1)) tr
+

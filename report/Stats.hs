@@ -149,7 +149,6 @@ groupEditTimes  = grouping editTime
 
 -- Stats — Trees
 --
-
 data StatsTree = Root [StatsTree] | Node Int String [StatsTree] | Leaf Time
                     deriving (Eq, Show)
 
