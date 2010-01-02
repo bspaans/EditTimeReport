@@ -119,8 +119,8 @@ tableDayS        = tableS show tableDay
 tableDayofWeekS  = tableS show tableDayofWeek
 
 treeToString :: StatsTree -> String
-treeToString (Root ns) = concatMap (tts' 2) ns
-  where tts' lvl (Node _ s tr) = "\n" ++ replicate (lvl * 2) ' ' ++ printf "%-40s" s ++ concatMap (tts' (lvl + 1)) tr
+treeToString (Root ns) = concatMap (tts' 1) ns
+  where tts' lvl (Node _ s tr) = "\n" ++ replicate (lvl * 4) ' ' ++ printf "%-70s" s ++ concatMap (tts' (lvl + 1)) tr
         tts' lvl (Leaf time) = replicate (lvl * 2) ' ' ++ showTime time
 
 {-

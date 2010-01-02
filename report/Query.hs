@@ -40,9 +40,9 @@ fromQSubQuery (QSubQuery gr Doy cons) = help gr Doy cons (doy . edit)
 help gr t c f = (fromQTable t, fromQConstraints c, addGrouping gr f)
 
 
-addGrouping :: Eq a => Bool -> (EditStats -> a) -> Group
+addGrouping :: Ord a => Bool -> (EditStats -> a) -> Group
 addGrouping False _ = dontGroup
-addGrouping True  f = groupWith f
+addGrouping True  f = groupWith f . sortBy (compare `on` f)
                                           
 fromQConstraints :: [QConstraint] -> Constraint
 fromQConstraints qc = makeConstraint $ foldr (\a b -> \p -> a p && b p) (const True) q
@@ -92,7 +92,7 @@ makeTree q s = Root (makeTree' s q (0,0,0))
 makeTree' :: Stats -> Query -> Time -> [StatsTree]
 makeTree' s []         t  = [Leaf t]
 makeTree' s ((v,c, g):cs) t = if null yes then if no /= [] then [makeNode "None" (sumTime no) no cs] else []
-                                else map (\gr -> makeNode (v . head $ gr) (sumTime gr) gr cs) (g . sortBy (compare `on` v) $ yes)
+                                else map (\gr -> makeNode (v . head $ gr) (sumTime gr) gr cs) (g yes)
                                       ++ if no /= [] then [makeNode "None" (sumTime no) no cs] else []
    where (yes, no) = c s
 
