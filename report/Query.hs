@@ -9,8 +9,8 @@ import Data.Function
 import Maybe
 
 type Queries = [Query]
-type Query = [QueryPart]
-type QueryPart = (View, Constraint, Group)
+type Query = [SubQuery]
+type SubQuery = (View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
 type View = EditStats -> String
 type Group = Stats -> [Stats]
