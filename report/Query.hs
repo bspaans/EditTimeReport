@@ -27,9 +27,15 @@ fromQQuery :: QQuery -> Query
 fromQQuery (qs, postfix) = map fromQSubQuery qs
 
 fromQSubQuery :: QSubQuery -> SubQuery
-fromQSubQuery (QSubQuery gr Ext cons) = (fromQTable Ext, fromQConstraints cons
-                                        , addGrouping gr extInformation)
+fromQSubQuery (QSubQuery gr Ext cons) = help gr Ext cons extInformation
 fromQSubQuery (QSubQuery gr Lang cons) = help gr Lang cons language
+fromQSubQuery (QSubQuery gr Proj cons) = help gr Proj cons project
+fromQSubQuery (QSubQuery gr File cons) = help gr File cons fileName
+fromQSubQuery (QSubQuery gr Year cons) = help gr Year cons (year . edit)
+fromQSubQuery (QSubQuery gr Month cons) = help gr Month cons (month . edit)
+fromQSubQuery (QSubQuery gr Day cons) = help gr Day cons (day . edit)
+fromQSubQuery (QSubQuery gr Dow cons) = help gr Dow cons (dow . edit)
+fromQSubQuery (QSubQuery gr Doy cons) = help gr Doy cons (doy . edit)
 
 help gr t c f = (fromQTable t, fromQConstraints c, addGrouping gr f)
 
@@ -47,7 +53,14 @@ fromQConstraint (QConstraint Ext oper expr) = maybe False (\e -> fromQOper oper 
 
 fromQTable :: QTable -> (EditStats -> String)
 fromQTable Ext  = fromMaybe "" . extInformation
-fromQTable Lang = maybe "" fst . language
+fromQTable Lang = maybe "" snd . language
+fromQTable Proj = maybe "" snd . project
+fromQTable File = fileName
+fromQTable Year = show . year . edit
+fromQTable Month = show . month . edit
+fromQTable Day = show . day . edit
+fromQTable Dow = show . dow . edit
+fromQTable Doy = show . doy . edit
 
 fromQExpression :: QExpr -> String
 fromQExpression (QInt i) = show i
