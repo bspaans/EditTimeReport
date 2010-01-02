@@ -53,6 +53,7 @@ makeNode s t yes cs = Node 0 s (makeTree' yes cs t)
    3.   group language * group extension
    4.   group language limit 5
    5.   group language ascending
+   6.   group language (time >= 3 months ago)
 
  in (pseudo?) SQL: 
     
@@ -61,19 +62,25 @@ makeNode s t yes cs = Node 0 s (makeTree' yes cs t)
    3. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
    4. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
    5. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
+   6. SELECT language, sum(editTime) FROM stats WHERE month >= MONTH() - 3 and year == YEAR() GROUP BY language
  
  Grammar:
 
-   The terminals are not case sensitive, so `GROUP' is the same as `group'
+   QUERY       := ε | SUBQUERIES QPREFIX?
+   SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
+   SUBQUERY    := group? TABLE CONSTRAINTS
+   QPREFIX     := LIMIT | ORDER
+   LIMIT       := limit DIGIT+
+   ORDER       := ascending | descending | asc | desc
+   TABLE       := extension | language | project | filename | year | month | day | dow | doy 
+   CONSTRAINTS := ε | ( CONS )
+   CONS        := CONSTRAINT | CONS , CONSTRAINT
+   CONSTRAINT  := TABLE OPERATOR VALUE
+   OPERATOR    := == | <= | < | > | >= | != | /=
+   VALUE       := NATURAL | STRING 
 
-   QUERY   := ε | Q QPREFIX?
-   Q       := T | Q * T
-   T       := group? TABLE 
-   QPREFIX := LIMIT | ORDER
-   LIMIT   := limit DIGIT+
-   ORDER   := ascending | descending | asc | desc
-   TABLE   := extension | language | project | filename | year | month | day | dow | doy 
 
-
-
+   tokens  := extension, language, project, filename, year, month, day, dow, doy
+            , ascending, descending, asc, desc, limit, '(', ')', ',', '==', '<='
+            , '<', '>', '>=', '!=', '/=', '*'
  -}

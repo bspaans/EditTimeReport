@@ -12,14 +12,14 @@ import System ( getArgs )
 --
 main = do args <- getArgs
           po <- return defaultPO
-          so <- askStatOptions
           if length args < 1 
             then usage
-            else if length args == 1 then htmlFromFile (head args) po so >>= putStrLn
-                                     else htmlFromFile (head args) po so >>= writeFile (args !! 1)
+            else do so <- askStatOptions
+                    if length args == 1 then htmlFromFile (head args) po so >>= putStrLn
+                                        else htmlFromFile (head args) po so >>= writeFile (args !! 1)
 
 
 
 usage = do putStrLn "Report generator"
            putStrLn "Copyright 2009, Bart Spaans"
-           putStrLn "\n  Usage: genreport LOG [OUTPUT]"
+           putStrLn "\n  Usage: report LOG [OUTPUT]\n"
