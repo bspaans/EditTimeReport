@@ -24,8 +24,8 @@ interactiveQueries :: Stats -> IO()
 interactiveQueries stats = 
   do maybeLine <- readline "> " 
      case maybeLine of
-       Nothing -> return ()
-       Just "exit" -> return ()
+       Nothing     -> do putStr "\n" ; return ()
+       Just "exit" -> do putStr "\n" ; return ()
        Just s -> do addHistory s
                     case treeFromQuery s stats of
                        Ok a     -> putStrLn $ treeToString a
@@ -80,9 +80,9 @@ fromQTable Lang  = maybe "None" snd . language
 fromQTable Proj  = maybe "None" snd . project
 fromQTable File  = fileName
 fromQTable Year  = show . year . edit
-fromQTable Month = show . month . edit
+fromQTable Month = getMonth . month . edit
 fromQTable Day   = show . day . edit
-fromQTable Dow   = show . dow . edit
+fromQTable Dow   = getDow . dow . edit
 fromQTable Doy   = show . doy . edit
 
 
