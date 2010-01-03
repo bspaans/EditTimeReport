@@ -1,8 +1,9 @@
 {
 module QueryLexer where
+
+import Data.Either
 }
 
-%wrapper "basic"
 
 $digit = 0-9
 $alpha = [a-zA-Z]
@@ -66,4 +67,28 @@ data ConstraintToken = TExtension
                      | TGE 
                      | TInteger Int
                      deriving (Eq, Show)
+
+type AlexInput = (Char,     -- previous char
+                  String)   -- current input string
+
+alexGetChar :: AlexInput -> Maybe (Char,AlexInput)
+alexGetChar (_, [])   = Nothing
+alexGetChar (_, c:cs) = Just (c, (c,cs))
+
+alexInputPrevChar :: AlexInput -> Char
+alexInputPrevChar (c,_) = c
+
+alexScanTokens :: String -> Either String [ConstraintToken]
+alexScanTokens str = case go ('\n',str) of
+                          [] -> Right []
+                          cs -> case last cs of 
+                                  Left a -> Left a
+                                  _ -> Right (rights cs)
+  where go inp@(_,str) =
+          case alexScan inp 0 of
+                AlexEOF -> []
+                AlexError _ -> [Left "lexical error"]
+                AlexSkip  inp' len     -> go inp'
+                AlexToken inp' len act -> Right (act (take len str)): go inp'
+
 }

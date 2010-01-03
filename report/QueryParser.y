@@ -137,7 +137,9 @@ parseQuery   :: String   -> E QQuery
 parseFile    :: FilePath -> IO (E QQuery)
 
 parseError _ = failE "Parse error"
-parseQuery   = queryParser . alexScanTokens
+parseQuery s = case alexScanTokens s of 
+                 Left err -> failE err
+                 Right a -> queryParser a
 parseFile f  = readFile f >>= return . parseQuery
 
 }
