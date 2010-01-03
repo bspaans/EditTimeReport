@@ -73,6 +73,9 @@ fromQConstraints qc = makeConstraint $ foldr (\a b p -> a p && b p) (const True)
 
 fromQConstraint (QConstraint Ext oper expr) = maybe False f . extInformation 
   where f e = fromQOper oper e $ fromQExpression expr
+fromQConstraint (QConstraint Day oper expr) = f . day . edit
+  where f d = fromQOper oper d $ read (fromQExpression expr)
+
 
 
 fromQTable Ext   = fromMaybe "None" . extInformation

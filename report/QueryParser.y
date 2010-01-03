@@ -16,9 +16,9 @@ import QueryLexer
 
 %token 
   '>'       { TL          } 
-  '<'       { TM          } 
+  '<'       { TG          } 
   '<='      { TLE         } 
-  '>='      { TME         } 
+  '>='      { TGE         } 
   '!='      { TNEqual     } 
   '=='      { TEqual      } 
   '('       { TParenOpen  } 

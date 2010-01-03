@@ -13,9 +13,9 @@ tokens :-
   $white+     ;
   "#".*       ;
   ">"         { \s -> TL                } 
-  "<"         { \s -> TM                } 
-  ">="        { \s -> TLE               } 
-  "<="        { \s -> TME               } 
+  "<"         { \s -> TG                } 
+  "<="        { \s -> TLE               } 
+  ">="        { \s -> TGE               } 
   "=="        { \s -> TEqual            } 
   "!="        { \s -> TNEqual           } 
   "/="        { \s -> TNEqual           } 
@@ -61,14 +61,9 @@ data ConstraintToken = TExtension
                      | TEqual
                      | TNEqual
                      | TL          
-                     | TM      
+                     | TG      
                      | TLE     
-                     | TME 
+                     | TGE 
                      | TInteger Int
                      deriving (Eq, Show)
-
-
-
-
-
 }

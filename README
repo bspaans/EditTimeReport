@@ -51,18 +51,18 @@ Current status » Generating Reports
   no other packages are needed. It can currently parse the log file, 
   do some analysis (like project and language classification) and produce 
   HTML and plain text pages in tabular format. It also has a simple DSL 
-  comparable to SQL (but much, much simpler) to query the data.  
-  It can answer questions like:
+  comparable to SQL (but much, much simpler) to query the data,  
+  which can help you make your own reports and answer questions like:
 
    * how many hours did I spent on a project/file?
    * what language have I used the most this year?
    * what's that configuration file I had to edit eight months ago?
    * what's my most productive day of the week?
-
-  In the future this will extend to:
-
    * how much time did I work on year/month/week/day?
    * ..and in which project or language?
+
+  See the bottom of Query.hs for a description of the grammar and some 
+  usage examples.
 
 
 Current status » Building
