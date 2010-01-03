@@ -40,7 +40,7 @@ fromQQuery       :: QQuery -> Query
 fromQSubQuery    :: QSubQuery -> SubQuery
 fromQConstraints :: [QConstraint] -> Constraint
 fromQConstraint  :: QConstraint -> Pred EditStats
-fromQTable       :: QTable -> (EditStats -> String)
+fromQIndex       :: QIndex -> (EditStats -> String)
 fromQExpression  :: QExpr -> String
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 fromQOper        :: Ord a =>  QOper -> (a -> a -> Bool)
@@ -60,7 +60,7 @@ fromQSubQuery (QSubQuery gr Dow   cons )  = makeQuery gr Dow   cons (dow . edit)
 fromQSubQuery (QSubQuery gr Doy   cons )  = makeQuery gr Doy   cons (doy . edit)
 
 
-makeQuery gr t c f  = (fromQTable t, fromQConstraints c, addGrouping gr f)
+makeQuery gr t c f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
 
 
 addGrouping False _ = dontGroup
@@ -78,15 +78,15 @@ fromQConstraint (QConstraint Day oper expr) = f . day . edit
 
 
 
-fromQTable Ext   = fromMaybe "None" . extInformation
-fromQTable Lang  = maybe "None" snd . language
-fromQTable Proj  = maybe "None" snd . project
-fromQTable File  = fileName
-fromQTable Year  = show . year . edit
-fromQTable Month = getMonth . month . edit
-fromQTable Day   = show . day . edit
-fromQTable Dow   = getDow . dow . edit
-fromQTable Doy   = show . doy . edit
+fromQIndex Ext   = fromMaybe "None" . extInformation
+fromQIndex Lang  = maybe "None" snd . language
+fromQIndex Proj  = maybe "None" snd . project
+fromQIndex File  = fileName
+fromQIndex Year  = show . year . edit
+fromQIndex Month = getMonth . month . edit
+fromQIndex Day   = show . day . edit
+fromQIndex Dow   = getDow . dow . edit
+fromQIndex Doy   = show . doy . edit
 
 
 fromQExpression (QInt i) = show i
@@ -172,14 +172,14 @@ treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
 
    QUERY       := ε | SUBQUERIES QPREFIX?
    SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
-   SUBQUERY    := group? TABLE CONSTRAINTS
+   SUBQUERY    := group? INDEX CONSTRAINTS
    QPREFIX     := LIMIT | ORDER
    LIMIT       := limit DIGIT+
    ORDER       := ascending | descending | asc | desc
-   TABLE       := extension | language | project | filename | year | month | day | dow | doy 
+   INDEX       := extension | language | project | filename | year | month | day | dow | doy 
    CONSTRAINTS := ε | ( CONS )
    CONS        := CONSTRAINT | CONS , CONSTRAINT
-   CONSTRAINT  := TABLE OPERATOR VALUE
+   CONSTRAINT  := INDEX OPERATOR VALUE
    OPERATOR    := == | <= | < | > | >= | != | /=
    VALUE       := NATURAL | STRING 
 

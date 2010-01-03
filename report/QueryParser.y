@@ -1,7 +1,7 @@
 {
 module QueryParser (QQuery, QConstraint(..), QSubQuery(..)
                    , QOper(..), QExpr(..)
-                   , QTable(..), parseQuery, E(..)
+                   , QIndex(..), parseQuery, E(..)
                    ) where
 
 import QueryLexer
@@ -51,12 +51,12 @@ QUERY : SUBQUERIES QPREFIX { ($1, $2)    }
 SUBQUERIES : SUBQUERY                 { [$1]        }
            | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
 
-SUBQUERY : GROUP TABLE CONSTRAINTS { QSubQuery $1 $2 $3 }
+SUBQUERY : GROUP INDEX CONSTRAINTS { QSubQuery $1 $2 $3 }
 
 GROUP : group             { True  }
       |                   { False }
 
-TABLE : extension         { Ext   }
+INDEX : extension         { Ext   }
       | language          { Lang  } 
       | project           { Proj  } 
       | filename          { File  } 
@@ -73,7 +73,7 @@ CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
      |                                  { []         }
 
-CONSTRAINT : TABLE OPERATOR EXPR        { QConstraint $1 $2 $3 }
+CONSTRAINT : INDEX OPERATOR EXPR        { QConstraint $1 $2 $3 }
 
 OPERATOR : '<'           { QL  }
          | '>'           { QG  }
@@ -92,13 +92,13 @@ QPREFIX : asc            { Asc  }
 
 type QQuery = ([QSubQuery], QPostfix)
 
-data QSubQuery = QSubQuery Bool QTable [QConstraint]
+data QSubQuery = QSubQuery Bool QIndex [QConstraint]
 
 data QPostfix = Empty | Asc | Desc | Limit Int
 
-data QTable = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
+data QIndex = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
 
-data QConstraint = QConstraint QTable QOper QExpr
+data QConstraint = QConstraint QIndex QOper QExpr
 
 data QOper = QL | QLE | QG | QGE | QE | QNE
 
