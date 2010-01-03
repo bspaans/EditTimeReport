@@ -1,7 +1,7 @@
 {
 module QueryParser (QQuery, QConstraint(..), QSubQuery(..)
                    , QOper(..), QExpr(..)
-                   , QTable(..), parseQuery
+                   , QTable(..), parseQuery, E(..)
                    ) where
 
 import QueryLexer
@@ -9,9 +9,10 @@ import QueryLexer
 
 %name queryParser
 
-%tokentype { ConstraintToken }
-%error     { parseError      }
+%tokentype  { ConstraintToken }
+%error      { parseError      }
 
+%monad      { E } { thenE } { returnE }
 
 %token 
   '>'       { TL          } 
@@ -48,7 +49,7 @@ QUERY : SUBQUERIES QPREFIX { ($1, $2)    }
 
 
 SUBQUERIES : SUBQUERY                 { [$1]        }
-	   | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
+           | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
 
 SUBQUERY : GROUP TABLE CONSTRAINTS { QSubQuery $1 $2 $3 }
 
@@ -66,7 +67,7 @@ TABLE : extension         { Ext   }
       | doy               { Doy   } 
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
-	    |               { [] } 
+        |               { [] } 
 
 CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
@@ -75,16 +76,16 @@ CONS : CONSTRAINT                       { [$1]       }
 CONSTRAINT : TABLE OPERATOR EXPR        { QConstraint $1 $2 $3 }
 
 OPERATOR : '<'           { QL  }
-	 | '>'           { QG  }
-	 | '<='          { QLE }
-	 | '>='          { QGE }
-	 | '=='          { QE  }
-	 | '!='          { QNE }
+         | '>'           { QG  }
+         | '<='          { QLE }
+         | '>='          { QGE }
+         | '=='          { QE  }
+         | '!='          { QNE }
 
 EXPR : integer           { QInt $1 }
 
 QPREFIX : asc            { Asc  }
-	| desc           { Desc }
+        | desc           { Desc }
         |                { Empty }
 
 {
@@ -104,11 +105,38 @@ data QOper = QL | QLE | QG | QGE | QE | QNE
 data QExpr = QInt Int 
 
 
-parseError   :: [ConstraintToken]  -> a
-parseQuery   :: String   -> QQuery
-parseFile    :: FilePath -> IO QQuery
 
-parseError _ = error "Parse error"
+data E a = Ok a | Failed String
+
+instance Functor E where
+  fmap f (Ok a)  = Ok $ f a
+  fmap f (Failed e) = Failed e
+
+thenE :: E a -> (a -> E b) -> E b
+m `thenE` k = 
+   case m of 
+     Ok a -> k a
+     Failed e -> Failed e
+
+returnE :: a -> E a
+returnE a = Ok a
+
+failE :: String -> E a
+failE err = Failed err
+
+catchE :: E a -> (String -> E a) -> E a
+catchE m k = 
+   case m of
+     Ok a -> Ok a
+     Failed e -> k e
+
+
+
+parseError   :: [ConstraintToken]  -> E a
+parseQuery   :: String   -> E QQuery
+parseFile    :: FilePath -> IO (E QQuery)
+
+parseError _ = failE "Parse error"
 parseQuery   = queryParser . alexScanTokens
 parseFile f  = readFile f >>= return . parseQuery
 

@@ -6,6 +6,7 @@ import QueryParser
 import Data.List
 import Data.Function
 import Maybe
+import Control.Applicative
 
 
 type Queries    = [Query]
@@ -23,7 +24,9 @@ interactiveQueries :: Stats -> IO()
 interactiveQueries stats = 
   do putStr "> " ; s <- getLine
      if s == "q" then return ()
-                 else do putStrLn $ treeToString (treeFromQuery s stats)
+                 else do case treeFromQuery s stats of
+                           Ok a     -> putStrLn $ treeToString a
+                           Failed e -> putStrLn $ "Parse error: " ++ e
                          interactiveQueries stats
 
 
@@ -110,7 +113,7 @@ makeConstraint p = con ([], [])
 makeTree      :: Query -> Stats -> StatsTree
 makeTree'     :: Stats -> Query -> Time -> [StatsTree]
 makeNode      :: String -> Stats -> Query -> StatsTree
-treeFromQuery :: String -> Stats -> StatsTree
+treeFromQuery :: String -> Stats -> E StatsTree
 
 makeTree q s  = Root (makeTree' s q (0,0,0))
  
@@ -132,7 +135,7 @@ makeNode s yes cs = Node (n tr) s tr
         n ((Leaf _):cs) = 1 + n cs
  
 
-treeFromQuery = makeTree . fromQQuery . parseQuery 
+treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
 
 
 {-

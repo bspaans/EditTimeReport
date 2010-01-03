@@ -50,7 +50,7 @@ data ConstraintToken = TExtension
                      | TDay
                      | TDow
                      | TDoy
-					 | TGroup
+                     | TGroup
                      | TAscending
                      | TDescending
                      | TLimit
