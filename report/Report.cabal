@@ -8,5 +8,5 @@ Build-Type:         Simple
 
 Executable report
   Main-Is:          Main.hs
-  Build-Depends:    base >= 3 && < 5, haskell98, xhtml, pretty, filepath, containers, array
+  Build-Depends:    base >= 3 && < 5, haskell98, xhtml, pretty, filepath, containers, array, editline
   Other-Modules:    QueryLexer, QueryParser

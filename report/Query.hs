@@ -7,7 +7,7 @@ import Data.List
 import Data.Function
 import Maybe
 import Control.Applicative
-
+import System.Console.Editline.Readline
 
 type Queries    = [Query]
 type Query      = [SubQuery]
@@ -22,12 +22,15 @@ type Group      = Stats -> [Stats]
 --
 interactiveQueries :: Stats -> IO()
 interactiveQueries stats = 
-  do putStr "> " ; s <- getLine
-     if s == "q" then return ()
-                 else do case treeFromQuery s stats of
-                           Ok a     -> putStrLn $ treeToString a
-                           Failed e -> putStrLn $ "Parse error: " ++ e
-                         interactiveQueries stats
+  do maybeLine <- readline "> " 
+     case maybeLine of
+       Nothing -> return ()
+       Just "exit" -> return ()
+       Just s -> do addHistory s
+                    case treeFromQuery s stats of
+                       Ok a     -> putStrLn $ treeToString a
+                       Failed e -> putStrLn $ "Parse error: " ++ e
+                    interactiveQueries stats
 
 
 
