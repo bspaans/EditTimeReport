@@ -14,33 +14,34 @@ tokens :-
 
   $white+     ;
   "#".*       ;
-  ">"         { \p s -> TL p                } 
-  "<"         { \p s -> TG p                } 
-  "<="        { \p s -> TLE p               } 
-  ">="        { \p s -> TGE p               } 
-  "=="        { \p s -> TEqual p            } 
-  "!="        { \p s -> TNEqual p           } 
-  "/="        { \p s -> TNEqual p           } 
-  "("         { \p s -> TParenOpen p        } 
-  ")"         { \p s -> TParenClose p       } 
-  ","         { \p s -> TComma p            } 
-  "*"         { \p s -> TProduct p          } 
-  extension   { \p s -> TExtension p        } 
-  language    { \p s -> TLanguage p         } 
-  project     { \p s -> TProject p          } 
-  filename    { \p s -> TFilename p         } 
-  year        { \p s -> TYear p             } 
-  month       { \p s -> TMonth p            } 
-  day         { \p s -> TDay p              } 
-  dow         { \p s -> TDow p              } 
-  doy         { \p s -> TDoy p              } 
-  ascending   { \p s -> TAscending p        } 
-  descending  { \p s -> TDescending p       } 
-  asc         { \p s -> TAscending p        } 
-  desc        { \p s -> TDescending p       } 
-  limit       { \p s -> TLimit p            } 
-  group       { \p s -> TGroup p            } 
-  $digit+     { \p s -> TInteger p (read s) } 
+  ">"         { \p s -> TL p                      } 
+  "<"         { \p s -> TG p                      } 
+  "<="        { \p s -> TLE p                     } 
+  ">="        { \p s -> TGE p                     } 
+  "=="        { \p s -> TEqual p                  } 
+  "!="        { \p s -> TNEqual p                 } 
+  "/="        { \p s -> TNEqual p                 } 
+  "("         { \p s -> TParenOpen p              } 
+  ")"         { \p s -> TParenClose p             } 
+  ","         { \p s -> TComma p                  } 
+  "*"         { \p s -> TProduct p                } 
+  extension   { \p s -> TExtension p              } 
+  language    { \p s -> TLanguage p               } 
+  project     { \p s -> TProject p                } 
+  filename    { \p s -> TFilename p               } 
+  year        { \p s -> TYear p                   } 
+  month       { \p s -> TMonth p                  } 
+  day         { \p s -> TDay p                    } 
+  dow         { \p s -> TDow p                    } 
+  doy         { \p s -> TDoy p                    } 
+  ascending   { \p s -> TAscending p              } 
+  descending  { \p s -> TDescending p             } 
+  asc         { \p s -> TAscending p              } 
+  desc        { \p s -> TDescending p             } 
+  limit       { \p s -> TLimit p                  } 
+  group       { \p s -> TGroup p                  } 
+  $digit+     { \p s -> TInteger p (read s)       } 
+  \".*\"      { \p s -> TString p (init (tail s)) } 
   
 {
 data ConstraintToken = TExtension AlexPosn
@@ -67,6 +68,7 @@ data ConstraintToken = TExtension AlexPosn
                      | TLE AlexPosn
                      | TGE AlexPosn
                      | TInteger AlexPosn Int
+                     | TString AlexPosn String
                      deriving (Eq, Show)
 
 
@@ -110,4 +112,5 @@ showTokenPos (TG p) = showPos p
 showTokenPos (TLE p) = showPos p
 showTokenPos (TGE p) = showPos p
 showTokenPos (TInteger p _) = showPos p
+showTokenPos (TString p _) = showPos p
 }

@@ -93,9 +93,9 @@ fromQConstraint (QConstraint Day oper expr) = f . day . edit
 
 
 
-fromQIndex Ext   = fromMaybe "None" . extInformation
-fromQIndex Lang  = maybe "None" snd . language
-fromQIndex Proj  = maybe "None" snd . project
+fromQIndex Ext   = fromMaybe "Unknown extension" . extInformation
+fromQIndex Lang  = maybe "Unknown language" snd . language
+fromQIndex Proj  = maybe "Unknown project" snd . project
 fromQIndex File  = fileName
 fromQIndex Year  = show . year . edit
 fromQIndex Month = getMonth . month . edit
@@ -105,6 +105,7 @@ fromQIndex Doy   = show . doy . edit
 
 
 fromQExpression (QInt i) = show i
+fromQExpression (QString s) = s
 
 
 fromQOper QL  = (<)
@@ -143,7 +144,7 @@ makeTree' s ((v,c, g):cs) t =
   if null yes then nomatch
     else map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) ++ nomatch
   where (yes, no) = c s
-        nomatch   = if null no then [] else [makeNode "None" no cs]
+        nomatch   = if null no then [] else [makeNode "No match" no cs]
 
 
 makeNode s yes cs = Node (n tr) s tr
@@ -158,27 +159,27 @@ treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
 
 {-
  
- Examples
-
- Constraint Language:
+ Examples of the embedded Query Language:
 
    1.   language * extension
    2.   group language * extension
    3.   group language * group extension
    4.   group language limit 5
    5.   group language ascending
-   6.   group language (time >= 3 months ago)
+   6.   group language (month == 1, year == 2010)
+   7.   group language (time >= 3 months ago)
 
  Last example is not yet implemented.
 
- in (pseudo?) SQL: 
+ in (pseudo) SQL: 
     
    1. SELECT language, extension, editTime FROM stats
    2. SELECT language, extension, sum(editTime) FROM stats GROUP BY language
    3. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
    4. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
    5. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
-   6. SELECT language, sum(editTime) FROM stats WHERE month >= MONTH() - 3 and year == YEAR() GROUP BY language
+   6. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
+   7. SELECT language, sum(editTime) FROM stats WHERE month >= MONTH() - 3 and year == YEAR() GROUP BY language
  
  Grammar:
 

@@ -39,7 +39,7 @@ import QueryLexer
   asc       { TAscending p  } 
   desc      { TDescending p } 
   integer   { TInteger p $$ } 
-
+  string    { TString p $$ }
 
 %%
 
@@ -83,6 +83,7 @@ OPERATOR : '<'           { QL  }
          | '!='          { QNE }
 
 EXPR : integer           { QInt $1 }
+     | string            { QString $1 }
 
 ORDER : asc           { Asc     }
       | desc          { Desc    }
@@ -99,7 +100,7 @@ data QLimit = Limit Int | NoLimit
 data QIndex = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
 data QConstraint = QConstraint QIndex QOper QExpr
 data QOper = QL | QLE | QG | QGE | QE | QNE
-data QExpr = QInt Int 
+data QExpr = QInt Int | QString String
 
 
 
