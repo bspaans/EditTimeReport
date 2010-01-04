@@ -46,7 +46,7 @@ addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 fromQOper        :: Ord a =>  QOper -> (a -> a -> Bool)
 
 
-fromQQuery (qs, order, limit) = fromQLimit (map fromQSubQuery qs) limit
+fromQQuery (qs, order, limit) = fromQLimit (fromQOrder (map fromQSubQuery qs) order) limit
 
 
 fromQSubQuery (QSubQuery gr Ext   cons )  = makeQuery gr Ext   cons extInformation
@@ -62,14 +62,14 @@ fromQSubQuery (QSubQuery gr Doy   cons )  = makeQuery gr Doy   cons (doy . edit)
 
 makeQuery gr t c f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
 
-addQPostfix [] _         = []
-addQPostfix cs NoOrder   = cs
-addQPostfix cs Asc       = cs
-addQPostfix cs Desc      = cs
+fromQOrder [] _         = []
+fromQOrder cs NoOrder   = cs
+fromQOrder cs Asc       = addToGrouping cs (sortBy (compare `on` sumTime))
+fromQOrder cs Desc      = addToGrouping cs (reverse . sortBy (compare `on` sumTime))
 
 
-fromQLimit cs NoLimit   = cs
 fromQLimit [] _         = []
+fromQLimit cs NoLimit   = cs
 fromQLimit cs (Limit i) = addToGrouping cs (take i)
 
 
@@ -138,9 +138,6 @@ treeFromQuery :: String -> Stats -> E StatsTree
 
 makeTree q s  = Root (makeTree' s q (0,0,0))
  
-
--- TODO: add sorting and totals
---
 makeTree' s []            t = [Leaf t]
 makeTree' s ((v,c, g):cs) t = 
   if null yes then nomatch
