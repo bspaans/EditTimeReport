@@ -48,6 +48,7 @@ module Query ( makeTree, interactiveQueries ) where
 import Stats
 import Printers
 import QueryParser
+import QueryAST
 import Char
 import Data.List
 import Data.Function
