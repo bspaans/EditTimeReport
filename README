@@ -130,13 +130,14 @@ Installing the Reporting Tool
 
     ghc --make Main.hs 
 
-  To produce a HTML report of the log file, you can then run:
-
-    report edittime.log log.html
-
   To get into an interactive session where you can query the log 
   file, use:
 
-    report edittime.log
+    report chart.log
 
   See Query.hs for a description of the grammar and some usage examples.
+  To produce a HTML report of the log file, you can then run:
+
+    report chart.log log.html
+
+  (Command line arguments will be implemented shortly)
