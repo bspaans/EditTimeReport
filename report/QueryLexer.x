@@ -79,7 +79,7 @@ alexScanTokens' str = case go (alexStartPos, '\n', str) of
                           [] -> Right []
                           cs -> case last cs of 
                                   Left a -> Left a
-                                  _ -> Right (rights cs)
+                                  _      -> Right (rights cs)
   where go inp@(pos,_,str) =
           case alexScan inp 0 of
                 AlexEOF -> []

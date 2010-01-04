@@ -1,20 +1,29 @@
-¡¡¡¡¡¡ work in progress !!!!!!!
-status: pre-alpha
+Edit Time Report [Think of better name later]
+---------------------------------------------
 
+  This is a tool that enables you to make detailed time reports of the work 
+  you have done in the past. It is mostly aimed at programmers who use a 
+  scriptable editor (eg. vim, emacs,..), since these programs allow you to 
+  log when you have edited a file.
 
-EditTimeChart [think of better name later]
-------------------------------------------
-
-  A tool aimed at programmers and other people who spend a lot of time in their 
-  editor (or in other scriptable programs). 
-
-  The idea:
+  The premise:
 
   1. Scriptable editors contact a permanently running daemon on each 
      save/close/whatever.
-  2. The daemon logs the commands to a flat plain text file. 
-  3. Have a separate tool to generate reports from the logs (in plain text, 
-     html, graphs,..) without having to do any manual work.
+
+  2. The daemon adds timestamps to these actions and writes them to a 
+     flat plain text file.
+
+  3. A separate tool generates reports from the logs (in plain text, 
+     html,..)
+
+  4. You will be able to answer questions like:
+
+	 * How many hours did I spent working on a language/project/file?
+	 * What language have I used the most this year?
+	 * What's my most productive day of the week?
+	 * How much time did I work on year/month/week/day?
+	 * ..and on which project or language?
 
 
 Current status » Daemon
@@ -52,17 +61,8 @@ Current status » Generating Reports
   do some analysis (like project and language classification) and produce 
   HTML and plain text pages in tabular format. It also has a simple DSL 
   comparable to SQL (but much, much simpler) to query the data,  
-  which can help you make your own reports and answer questions like:
-
-   * how many hours did I spent on a project/file?
-   * what language have I used the most this year?
-   * what's that configuration file I had to edit eight months ago?
-   * what's my most productive day of the week?
-   * how much time did I work on year/month/week/day?
-   * ..and in which project or language?
-
-  See the bottom of Query.hs for a description of the grammar and some 
-  usage examples.
+  which can help you make your own reports. See Query.hs for a description 
+  of the grammar and some usage examples.
 
 
 Current status » Building
@@ -139,5 +139,4 @@ Installing the Reporting Tool
 
     report edittime.log
 
-  See the bottom of Query.hs for a description of the grammar and 
-  some usage examples.
+  See Query.hs for a description of the grammar and some usage examples.
