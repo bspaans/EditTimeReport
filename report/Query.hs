@@ -3,6 +3,7 @@ module Query ( makeTree, interactiveQueries ) where
 import Stats
 import Printers
 import QueryParser
+import Char
 import Data.List
 import Data.Function
 import Maybe
@@ -86,11 +87,28 @@ fromQConstraints qc = makeConstraint $ foldr (\a b p -> a p && b p) (const True)
   where q           = map fromQConstraint qc
 
 
-fromQConstraint (QConstraint Ext oper expr) = maybe False f . extInformation 
-  where f e = fromQOper oper e $ fromQExpression expr
-fromQConstraint (QConstraint Day oper expr) = f . day . edit
+fromQConstraint (QConstraint Ext oper expr) = maybeConstraint oper extInformation id expr
+fromQConstraint (QConstraint Lang oper expr) = maybeConstraint oper language snd expr
+fromQConstraint (QConstraint Proj oper expr) = maybeConstraint oper project snd expr
+fromQConstraint (QConstraint File oper expr) = f . fileName 
+  where f d = fromQOper oper d $ fromQExpression expr
+fromQConstraint (QConstraint Year oper expr) = numericalConstraint oper year expr
+fromQConstraint (QConstraint Month oper (QString s)) = f . map toUpper . getMonth . month . edit
+  where f d = fromQOper oper d $ map toUpper s
+fromQConstraint (QConstraint Month oper (QInt i)) = f . month . edit
+  where f d = fromQOper oper d i
+fromQConstraint (QConstraint Day oper expr) = numericalConstraint oper day expr
+fromQConstraint (QConstraint Dow oper (QString s)) = f . map toUpper . getDow . dow . edit
+  where f d = fromQOper oper d $ map toUpper s
+fromQConstraint (QConstraint Dow oper (QInt i)) = f . dow . edit
+  where f d = fromQOper oper d i
+fromQConstraint (QConstraint Doy oper expr) = numericalConstraint oper doy expr
+
+numericalConstraint oper g expr = f . g . edit  -- Do type checking in the parser for doy, day, year
   where f d = fromQOper oper d $ read (fromQExpression expr)
 
+maybeConstraint oper g h expr = maybe False f . g
+  where f e = fromQOper oper (h e) $ fromQExpression expr
 
 
 fromQIndex Ext   = fromMaybe "Unknown extension" . extInformation
@@ -142,7 +160,7 @@ makeTree q s  = Root (makeTree' s q (0,0,0))
 makeTree' s []            t = [Leaf t]
 makeTree' s ((v,c, g):cs) t = 
   if null yes then nomatch
-    else map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) ++ nomatch
+    else map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) ++ nomatch -- if nomatch gets removed here, a prune function is needed in makeTree to remove dead paths
   where (yes, no) = c s
         nomatch   = if null no then [] else [makeNode "No match" no cs]
 

@@ -82,7 +82,8 @@ alexScanTokens' str = case go (alexStartPos, '\n', str) of
           case alexScan inp 0 of
                 AlexEOF -> []
                 AlexError _ -> [Left $ "Lexical error on " ++ showPos pos
-                                        ++ ". Not a valid token."]
+                                        ++ if null str then "."
+                                             else ". Not a valid token: '" ++ (head . words $ str) ++ "'"]
                 AlexSkip  inp' len     -> go inp'
                 AlexToken inp' len act -> Right (act pos (take len str)): go inp'
 
