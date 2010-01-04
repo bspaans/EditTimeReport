@@ -74,8 +74,8 @@ askStatOptions = do
     extDict <- return (D.union (D.fromList exts) extensionDict)
     when (exts /= []) (do putStrLn "  Using the following extensions" ; 
                           putStrLn $ printExtensions extDict)
-    lang <- askLanguages
     src  <- askSourceDir
+    lang <- askLanguages
     return (SO extDict lang src home)
 
 
@@ -150,17 +150,6 @@ askMatches :: IO Matches
 
 -- TODO: check for pathSeparator at end of path
 --
-askLanguages = do putStrLn "\n  ==================== Languages ==================\n"
-                  putStrLn "\n  If you have a source directory containing different languages"
-                  putStrLn "  in different directories, you can use this program to classify them."
-                  putStrLn "  For example: if you have a directory ~/src containing directories "
-                  putStrLn "  ~/src/python/ and ~/src/haskell/ you can enter ~/src/"
-                  putStrLn "  Currently there are no language directories specified."
-                  m <- askMatches     
-                  when (m /= []) (do putStrLn "\n  Using language directories:\n"; 
-                                     putStrLn $ printMatches m)
-                  return m
-
 askSourceDir = do putStrLn "\n  ================= Source Directories ============\n"
                   putStrLn "\n  If you have a directory containing different project directories, "
                   putStrLn "  you can let this program tag the edits in those directories with "
@@ -171,6 +160,21 @@ askSourceDir = do putStrLn "\n  ================= Source Directories ===========
                   when (m /= []) (do putStrLn "\n  Using source directories:\n"; 
                                      putStrLn $ printMatches m)
                   return m
+
+
+askLanguages = do putStrLn "\n  ==================== Languages ==================\n"
+                  putStrLn "  If you have a directory ~/src containing directories "
+                  putStrLn "  ~/src/python/ and ~/src/haskell/ you can enter ~/src/"
+                  putStrLn "  and let the program figure out the language of each edit."
+                  putStrLn "  Each language directory is also used as a source directory,"
+                  putStrLn "  so ~/src/python/program/ automatically gets listed under "
+                  putStrLn "  language `python' and project `program'."
+                  putStrLn "  Currently there are no language directories specified."
+                  m <- askMatches     
+                  when (m /= []) (do putStrLn "\n  Using language directories:\n"; 
+                                     putStrLn $ printMatches m)
+                  return m
+
 
 
 askMatches = askMultiple askMatch
