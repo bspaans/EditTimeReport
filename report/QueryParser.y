@@ -75,7 +75,7 @@ CONS : CONSTRAINT                       { [$1]       }
 
 CONSTRAINT : INDEX OPERATOR EXPR        {% if elem $1 [Year, Day, Doy] then case $3 of 
                                                QInt _ -> returnE $ QConstraint $1 $2 $3
-                                               QString s -> failE $ "Expecting an integer, but got string '" ++ s ++ "'" 
+                                               QString s -> failE $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
                                            else (returnE $ QConstraint $1 $2 $3) }
 
 OPERATOR : '<'           { QL  }

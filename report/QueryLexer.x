@@ -9,6 +9,7 @@ import Data.Either
 $digit = 0-9
 $alpha = [a-zA-Z]
 $ident = [a-zA-Z0-9]
+$s     = [^'"']
 
 tokens :-
 
@@ -19,6 +20,7 @@ tokens :-
   "<="        { \p s -> TLE p                     } 
   ">="        { \p s -> TGE p                     } 
   "=="        { \p s -> TEqual p                  } 
+  "="         { \p s -> TEqual p                  }
   "!="        { \p s -> TNEqual p                 } 
   "/="        { \p s -> TNEqual p                 } 
   "("         { \p s -> TParenOpen p              } 
@@ -41,7 +43,7 @@ tokens :-
   limit       { \p s -> TLimit p                  } 
   group       { \p s -> TGroup p                  } 
   $digit+     { \p s -> TInteger p (read s)       } 
-  \".*\"      { \p s -> TString p (init (tail s)) } 
+  \"$s*\"     { \p s -> TString p (init (tail s)) } 
   
 {
 data ConstraintToken = TExtension AlexPosn
