@@ -70,7 +70,7 @@ INDEX : extension         { Ext   }
       | doy               { Doy   } 
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
-        |                   { [] } 
+        | CONS              { $1 }
 
 CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }

@@ -5,15 +5,16 @@ module Query ( makeTree, interactiveQueries ) where
  Examples of the embedded Query Language:
 
    1.   group language * group extension
-   2.   language * extension # grouping is default
+   2.   language * extension   # same as no 1; grouping is default
    3.   language * nogroup extension    
    4.   nogroup language * nogroup extension
    5.   language limit 5
    6.   language ascending
    7.   language (language == "Haskell")
-   8.   language (=="Haskell") # same as no 7
-   9.   language ("Haskell") # same as no 7
-  10.   language (month == 1, year == 2010)
+   8.   language (=="Haskell") # same as no 7; index is default 
+   9.   language ("Haskell")   # same as no 8; == is default operator
+  10.   language "Haskell"     # same as no 9; parens are optional
+  10.   language month == 1, year == 2010
 
  in (pseudo) SQL: 
     
@@ -37,8 +38,8 @@ module Query ( makeTree, interactiveQueries ) where
    ORDER       := ascending | descending | asc | desc
    GROUPING    := group | & | nogroup | !
    INDEX       := extension | language | project | filename | year | month | day | dow | doy 
-   CONSTRAINTS := ε | ( CONS )
-   CONS        := CONSTRAINT | CONS , CONSTRAINT
+   CONSTRAINTS := ( CONS ) | CONS
+   CONS        := ε | CONSTRAINT | CONS , CONSTRAINT 
    CONSTRAINT  := INDEX OPERATOR EXPR | OPERATOR EXPR | EXPR
    OPERATOR    := == | = | <= | < | > | >= | != | /=
    EXPR        := DIGIT+ | STRING
@@ -46,7 +47,7 @@ module Query ( makeTree, interactiveQueries ) where
 
    tokens  := extension, language, project, filename, year, month, day, dow, doy
             , ascending, descending, asc, desc, limit, '(', ')', ',', '==', '<='
-            , '<', '>', '>=', '!=', '/=', '*'
+            , '<', '>', '>=', '!=', '/=', '*', '&', '!'
 -}
 
 
