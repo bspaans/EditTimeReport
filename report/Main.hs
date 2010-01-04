@@ -11,6 +11,7 @@ import List
 import System 
 import System.Console.GetOpt
 import System.IO
+import Control.Monad
 
 
 data Options = Options {
@@ -20,7 +21,7 @@ data Options = Options {
                        , lang        :: [(String, String)]
                        , proj        :: [(String, String)]
                        , home        :: Maybe String        -- </not doing anything yet>
-                       }
+                       } deriving (Eq, Show)
 
 defaultOptions :: Options
 defaultOptions = Options { 
@@ -59,20 +60,16 @@ parseDescription s = case getDesc of
                             take (o - c + 1) (drop (c + 1) reversed))
                        else Nothing
 
--- TODO getOpt here
---
 main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           args <- getArgs
           let (actions, nonOpts, msgs) = getOpt RequireOrder options args 
+          when (msgs /= []) (error $ concat msgs)
           opts <- foldl (>>=) (return defaultOptions) actions
           po <- return defaultPO
-          if length args < 1 
+          if null nonOpts
             then putStrLn usage
             else do so <- if askOptions opts then askStatOptions else defaultIOSO
-                    let iqueries = do s <- statsFromFile (head args) so ; interactiveQueries s
-                    if length args == 1 then iqueries
-                                        else if length args == 2 && args !! 1 /= "-i" 
-                                               then htmlFromFile (head args) po so >>= writeFile (args !! 1)
-                                               else iqueries
+                    s  <- statsFromFile (head nonOpts) so 
+                    interactiveQueries s
 
-usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report LOG [OUTPUT]\n"
+usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOG\n"

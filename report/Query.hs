@@ -132,9 +132,11 @@ treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
 -- Interactive Query prompt using editline
 --
 interactiveQueries :: Stats -> IO()
-interactiveQueries stats = putStrLn (unlines ["Time Report 1.0a, interactive session"
-                                             , "Copyright 2009-2010, Bart Spaans"
-                                             , "Type \"help\" for more information"]) >> interactiveQ'
+interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive session"
+                                               , "Copyright 2009-2010, Bart Spaans"
+                                               , "Type \"help\" for more information"])
+                              setCompletionEntryFunction (Just qCompleter)
+                              interactiveQ'
   where interactiveQ' = do
          maybeLine <- readline "> " 
          case maybeLine of
@@ -147,6 +149,11 @@ interactiveQueries stats = putStrLn (unlines ["Time Report 1.0a, interactive ses
                            Failed e -> putStrLn e
                         interactiveQ' 
 
+qCompleter :: String -> IO [String]
+qCompleter s = return (filter (startsWith s) known)
+  where known = ["extension", "language", "project", "filename"
+               , "year", "month", "day", "dow", "doy", "limit"
+               , "asc", "desc"]
 
 
 -- Convert AST to Query

@@ -13,6 +13,8 @@ import System (getEnv)
 import System.FilePath
 import Control.Monad
 import Control.Arrow
+import System
+import System.Console.Editline.Readline
 
 
 
@@ -76,6 +78,7 @@ askStatOptions = do
                           putStrLn $ printExtensions extDict)
     src  <- askSourceDir
     lang <- askLanguages
+    putStrLn "\n"
     return (SO extDict lang src home)
 
 
@@ -90,25 +93,27 @@ askDesc           :: String -> String
 askMultiple       :: IO t -> IO [t]
 
 
-ask s d = do putStrLn $ s ++ "\n"; getAnswer
-   where getAnswer = do a <- getLine ; maybe n return $ lookup a d
-         n         = putStrLn "  Not a valid option.\n" >> getAnswer
+ask s d = do a <- readline s; 
+             case a of 
+                Nothing -> exitWith ExitSuccess
+                Just x -> maybe n return $ lookup x d
+  where n = putStrLn "\n  Not a valid option." >> ask s d
 
 
 askNonEmpty s = do 
-  putStrLn s
-  a <- getLine
-  if a == "" 
-    then putStrLn "  Answer can't be empty\n" >> askNonEmpty s
-    else return a
+  a <- readline s
+  case a of 
+    Nothing -> exitWith ExitSuccess
+    Just "" -> putStrLn "\n  Answer can't be empty" >> askNonEmpty s
+    Just x  -> return x
 
 
 askMore = do 
-    ask "\n  Would you like to enter more (y/n) [N]?" a
+    ask "\n  Would you like to enter more (y/n) [N]? " a
     where a = [("y", True), ("n", False), ("", False)]
 
 
-askDesc a       = "\n  Enter a description for `" ++ a ++ "'\n"
+askDesc a       = "  Enter a description for `" ++ a ++ "': "
 
 askMultiple = askOne []
   where askOne r a = do
@@ -135,7 +140,7 @@ askExtension      :: IO (String, String)
 
 askExtensions        = askMultiple askExtension
 askExtension         = do e <- askE ; d <- askD e ; return (addD e, d)
-  where askE         = askNonEmpty "\n  Enter a new extension (eg. txt)\n"
+  where askE         = askNonEmpty "  Enter a new extension (eg. txt): "
         askD         = askNonEmpty . askDesc 
         addD []      = []
         addD ('.':s) = '.':s
@@ -157,7 +162,7 @@ askSourceDir = do putStrLn "\n  ================= Source Directories ===========
                   putStrLn "  directories ~/src/project1/ and ~/src/project2 you can enter ~/src."
                   putStrLn "  Currently there are no source directories specified."
                   m <- askMatches     
-                  when (m /= []) (do putStrLn "\n  Using source directories:\n"; 
+                  when (m /= []) (do putStrLn "\n\n  Using source directories:\n"; 
                                      putStrLn $ printMatches m)
                   return m
 
@@ -171,7 +176,7 @@ askLanguages = do putStrLn "\n  ==================== Languages =================
                   putStrLn "  language `python' and project `program'."
                   putStrLn "  Currently there are no language directories specified."
                   m <- askMatches     
-                  when (m /= []) (do putStrLn "\n  Using language directories:\n"; 
+                  when (m /= []) (do putStrLn "\n\n  Using language directories:\n"; 
                                      putStrLn $ printMatches m)
                   return m
 
@@ -180,7 +185,7 @@ askLanguages = do putStrLn "\n  ==================== Languages =================
 askMatches = askMultiple askMatch
 
 askMatch = do p <- askP ; d <- askD p ; return (splitPath p, d)
-  where askP = askNonEmpty "\n  Enter a new path\n"
+  where askP = askNonEmpty "  Enter a new path: "
         askD = askNonEmpty . askDesc
 
 

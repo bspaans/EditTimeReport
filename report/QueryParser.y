@@ -71,10 +71,10 @@ INDEX : extension         { Ext   }
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
         | CONS              { $1 }
+        |                   { [] }
 
 CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
-     |                                  { []         }
 
 CONSTRAINT : INDEX OPERATOR EXPR        {% typeCheckQC $1 $2 $3 }
            | OPERATOR EXPR              { QCOE $1 $2 }
