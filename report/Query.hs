@@ -4,33 +4,32 @@ module Query ( makeTree, interactiveQueries ) where
  
  Examples of the embedded Query Language:
 
-   1.   language * extension
-   2.   language * nogroup extension # grouping is default
-   3.   nogroup language * nogroup extension
-   4.   language limit 5
-   5.   language ascending
-   6.   language (month == 1, year == 2010)
-   7.   language (time >= 3 months ago)
-
- Last example is not yet implemented.
+   1.   group language * group extension
+   2.   language * extension # grouping is default
+   3.   language * nogroup extension    
+   4.   nogroup language * nogroup extension
+   5.   language limit 5
+   6.   language ascending
+   7.   language (month == 1, year == 2010)
 
  in (pseudo) SQL: 
     
    1. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
-   2. SELECT language, extension, sum(editTime) FROM stats GROUP BY language
-   3. SELECT language, extension, editTime FROM stats
-   4. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
-   5. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
-   6. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
-   7. SELECT language, sum(editTime) FROM stats WHERE month >= MONTH() - 3 and year == YEAR() GROUP BY language
+   2. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
+   3. SELECT language, extension, sum(editTime) FROM stats GROUP BY language
+   4. SELECT language, extension, editTime FROM stats
+   5. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
+   6. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
+   7. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
  
  Grammar:
 
    QUERY       := ε | SUBQUERIES ORDER? LIMIT?
    SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
-   SUBQUERY    := group? INDEX CONSTRAINTS
+   SUBQUERY    := GROUPING INDEX CONSTRAINTS
    LIMIT       := limit DIGIT+
    ORDER       := ascending | descending | asc | desc
+   GROUPING    := group | & | nogroup | !
    INDEX       := extension | language | project | filename | year | month | day | dow | doy 
    CONSTRAINTS := ε | ( CONS )
    CONS        := CONSTRAINT | CONS , CONSTRAINT
