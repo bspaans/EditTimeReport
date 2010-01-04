@@ -11,7 +11,7 @@ type QQuery      = ([QSubQuery], QOrder, QLimit)
 data QSubQuery   = QSubQuery Bool QIndex [QConstraint]
 data QIndex      = Ext | Lang | Proj | File | Year
                  | Month | Day | Dow | Doy deriving (Eq, Show)
-data QConstraint = QConstraint QIndex QOper QExpr
+data QConstraint = QC QIndex QOper QExpr
 data QOper       = QL | QLE | QG | QGE | QE | QNE
 data QExpr       = QInt Int | QString String
 data QOrder      = Asc | Desc | NoOrder

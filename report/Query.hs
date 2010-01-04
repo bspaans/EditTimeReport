@@ -105,7 +105,7 @@ makeTree' s ((v,c, g):cs) t =
 
 
 -- A Node is made of an Int describing the number of leafs,
--- a string that is used for printing and of course its children.
+-- a string that is used for printing, and of course its children.
 --
 makeNode s yes cs = Node (n tr) s tr
   where tr = makeTree' yes cs (sumTime yes)
@@ -136,21 +136,45 @@ interactiveQueries stats =
 
 
 
--- Convert Parsed QQuery to Query
+-- Convert AST to Query
+-- We have to transform the parsing result (QQuery) into 
+-- SubQueries (ie. a view function, a constraint and a 
+-- group function)
 --
 fromQQuery       :: QQuery -> Query
 fromQSubQuery    :: QSubQuery -> SubQuery
-fromQConstraints :: [QConstraint] -> Constraint
-fromQConstraint  :: QConstraint -> Pred EditStats
 fromQIndex       :: QIndex -> (EditStats -> String)
-fromQExpression  :: QExpr -> String
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
-fromQOper        :: Ord a => QOper -> (a -> a -> Bool)
 
 
-fromQQuery (qs, order, limit) = fromQLimit (fromQOrder (map fromQSubQuery qs) order) limit
+-- First convert all the subqueries, then apply
+-- ordering and limiting to the last grouping function
+-- 
+fromQQuery (qs, order, limit) = limiting
+  where subs = map fromQSubQuery qs
+        ordering = fromQOrder subs order
+        limiting = fromQLimit ordering limit
 
 
+-- Ordering is done before passing the grouped Stats
+-- on to the constraint function
+--
+fromQOrder [] _         = []
+fromQOrder cs NoOrder   = cs
+fromQOrder cs Asc       = addToGrouping cs (sortBy (compare `on` sumTime))
+fromQOrder cs Desc      = addToGrouping cs (sortBy (flip compare `on` sumTime))
+
+
+-- Limiting is done before passing the constraint 
+-- function as well
+--
+fromQLimit [] _         = []
+fromQLimit cs NoLimit   = cs
+fromQLimit cs (Limit i) = addToGrouping cs (take i)
+
+
+-- Sub queries
+--
 fromQSubQuery q@(QSubQuery _ Ext   _ )  = makeQuery q extInformation
 fromQSubQuery q@(QSubQuery _ Lang  _ )  = makeQuery q language
 fromQSubQuery q@(QSubQuery _ Proj  _ )  = makeQuery q project
@@ -161,60 +185,11 @@ fromQSubQuery q@(QSubQuery _ Day   _ )  = makeQuery q (day . edit)
 fromQSubQuery q@(QSubQuery _ Dow   _ )  = makeQuery q (dow . edit)
 fromQSubQuery q@(QSubQuery _ Doy   _ )  = makeQuery q (doy . edit)
 
-
 makeQuery (QSubQuery gr t c) f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
 
-fromQOrder [] _         = []
-fromQOrder cs NoOrder   = cs
-fromQOrder cs Asc       = addToGrouping cs (sortBy (compare `on` sumTime))
-fromQOrder cs Desc      = addToGrouping cs (reverse . sortBy (compare `on` sumTime))
 
-
-fromQLimit [] _         = []
-fromQLimit cs NoLimit   = cs
-fromQLimit cs (Limit i) = addToGrouping cs (take i)
-
-
-addToGrouping [] _ = error "Empty query, can't add to grouping"
-addToGrouping cs f = init cs ++ [add (last cs)]
-  where add (v, cs, gr) = (v, cs, f . gr)
-
-
-addGrouping False _ = dontGroup
-addGrouping True  f = groupWith f . sortBy (compare `on` f)
-
-
-
-fromQConstraints qc = makeConstraint $ foldr (\a b p -> a p && b p) (const True) q
-  where q           = map fromQConstraint qc
-
-
--- Convert the parsed constraints into a predicate
+-- The view function
 --
-fromQConstraint (QConstraint Ext op e) = maybeConstraint op extInformation id e
-fromQConstraint (QConstraint Lang op e) = maybeConstraint op language snd e
-fromQConstraint (QConstraint Proj op e) = maybeConstraint op project snd e
-fromQConstraint (QConstraint File op e) = f . fileName 
-  where f d = fromQOper op d $ fromQExpression e
-fromQConstraint (QConstraint Year op e) = numericalConstraint op year e
-fromQConstraint (QConstraint Month op (QString s)) = f . map toUpper . getMonth . month . edit
-  where f d = fromQOper op d $ map toUpper s
-fromQConstraint (QConstraint Month op (QInt i)) = f . month . edit
-  where f d = fromQOper op d i
-fromQConstraint (QConstraint Day op e) = numericalConstraint op day e
-fromQConstraint (QConstraint Dow op (QString s)) = f . map toUpper . getDow . dow . edit
-  where f d = fromQOper op d $ map toUpper s
-fromQConstraint (QConstraint Dow op (QInt i)) = f . dow . edit
-  where f d = fromQOper op d i
-fromQConstraint (QConstraint Doy op e) = numericalConstraint op doy e
-
-numericalConstraint op g e = f . g . edit  
-  where f d = fromQOper op d $ read (fromQExpression e)
-
-maybeConstraint op g h e = maybe False f . g
-  where f d = fromQOper op (h d) $ fromQExpression e
-
-
 fromQIndex Ext   = fromMaybe "Unknown extension" . extInformation
 fromQIndex Lang  = maybe "Unknown language" snd . language
 fromQIndex Proj  = maybe "Unknown project" snd . project
@@ -226,18 +201,63 @@ fromQIndex Dow   = getDow . dow . edit
 fromQIndex Doy   = show . doy . edit
 
 
-fromQExpression (QInt i) = show i
-fromQExpression (QString s) = s
+-- The grouping function
+--
+addGrouping False _ = map (:[]) -- dontGroup
+addGrouping True  f = groupWith f . sortBy (compare `on` f)
 
 
-fromQOper QL  = (<)
-fromQOper QG  = (>)
-fromQOper QLE = (<=)
-fromQOper QGE = (>=)
+addToGrouping [] _ = error "Empty query, can't add to grouping"
+addToGrouping cs f = init cs ++ [add (last cs)]
+  where add (v, cs, gr) = (v, cs, f . gr)
+
+
+
+-- QConstraints to Constraints
+-- Individual QConstraints are first converted to predicates
+-- and get turned into one Constraint using makeConstraint.
+--
+fromQConstraints :: [QConstraint] -> Constraint
+makePred         :: QConstraint -> Pred EditStats
+
+
+fromQConstraints qc = makeConstraint $ foldr f (const True) (map makePred qc)
+  where f a b p     = a p && b p
+
+makePred (QC File  op e) = fromQOper op (fromQExpr e) . fileName
+makePred (QC Month op e) = numStringC op e month getMonth
+makePred (QC Dow   op e) = numStringC op e dow getDow
+makePred (QC Year  op e) = numericalC op year e
+makePred (QC Day   op e) = numericalC op day e
+makePred (QC Doy   op e) = numericalC op doy e
+makePred (QC i     op e) = flip (fromQOper op) (fromQExpr e) . fromQIndex i
+
+-- helper functions; to do the conversion
+stringC op s f    = fromQOper op (map toUpper s) . map toUpper . f . edit
+numericalC op g e = fromQOper op (read (fromQExpr e)) . g . edit
+maybeC op g h e   = maybe False (fromQOper op (fromQExpr e) . h) . g
+
+numStringC op (QInt i) num _      = fromQOper op i . num . edit
+numStringC op (QString s) num str = stringC op s (str . num)
+
+-- Expressions 
+--
+fromQExpr :: QExpr -> String
+fromQExpr (QInt i) = show i
+fromQExpr (QString s) = s
+
+
+-- Operators are written flipped around to make it easier 
+-- to write in a point-free style (see above)
+--
+fromQOper :: Ord a => QOper -> (a -> a -> Bool)
+fromQOper QL  = (>)  
+fromQOper QG  = (<)  
+fromQOper QLE = (>=) 
+fromQOper QGE = (<=) 
 fromQOper QE  = (==)
 fromQOper QNE = (/=)
 
 
-dontGroup = map (:[]) 
 
 
