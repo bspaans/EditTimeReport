@@ -1,10 +1,10 @@
-module StatOptions ( StatOptions(SO, extensions, languages -- StatOptions
-                   , projects, homePath)                   -- StatOptions
+module StatOptions ( StatOptions(..)                       -- StatOptions
                    , Description, Extension, Extensions    -- Type synonyms
                    , SplitPath, Match, Matches             -- Type synonyms
                    , Languages, Projects                   -- Type synonyms
                    , askStatOptions                        -- Interactive session
                    , defaultSO, defaultIOSO                -- Debugging SO's
+                   , extensionDict
                    ) where
 
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
