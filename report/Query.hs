@@ -5,20 +5,20 @@ module Query ( makeTree, interactiveQueries ) where
  Examples of the embedded Query Language:
 
    1.   language * extension
-   2.   group language * extension
-   3.   group language * group extension
-   4.   group language limit 5
-   5.   group language ascending
-   6.   group language (month == 1, year == 2010)
-   7.   group language (time >= 3 months ago)
+   2.   language * nogroup extension # grouping is default
+   3.   nogroup language * nogroup extension
+   4.   language limit 5
+   5.   language ascending
+   6.   language (month == 1, year == 2010)
+   7.   language (time >= 3 months ago)
 
  Last example is not yet implemented.
 
  in (pseudo) SQL: 
     
-   1. SELECT language, extension, editTime FROM stats
+   1. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
    2. SELECT language, extension, sum(editTime) FROM stats GROUP BY language
-   3. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
+   3. SELECT language, extension, editTime FROM stats
    4. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
    5. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
    6. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
@@ -60,13 +60,14 @@ import System.Console.Editline.Readline
 -- Each query is represented by sub queries, 
 -- each of which adds a new level to the 
 -- generated tree.
-
+--
 type Queries    = [Query]
 type Query      = [SubQuery]
 type SubQuery   = (View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
 type View       = EditStats -> String
 type Group      = Stats -> [Stats]
+
 
 
 -- A Constraint separates Stats matching 
@@ -78,6 +79,7 @@ makeConstraint p = con ([], [])
   where con (yes, no) [] = (yes, no)
         con (yes, no) (s:st) = con n st
           where n = if p s then (s : yes, no) else (yes, s:no)
+
 
 
 -- Executing a Query 
@@ -118,6 +120,7 @@ makeNode s yes cs = Node (n tr) s tr
 -- of a String in the Query language.
 --
 treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
+
 
 
 -- Interactive Query prompt using editline
@@ -188,6 +191,7 @@ fromQSubQuery q@(QSubQuery _ Doy   _ )  = makeQuery q (doy . edit)
 makeQuery (QSubQuery gr t c) f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
 
 
+
 -- The view function
 --
 fromQIndex Ext   = fromMaybe "Unknown extension" . extInformation
@@ -199,6 +203,7 @@ fromQIndex Month = getMonth . month . edit
 fromQIndex Day   = show . day . edit
 fromQIndex Dow   = getDow . dow . edit
 fromQIndex Doy   = show . doy . edit
+
 
 
 -- The grouping function
@@ -257,7 +262,5 @@ fromQOper QLE = (>=)
 fromQOper QGE = (<=) 
 fromQOper QE  = (==)
 fromQOper QNE = (/=)
-
-
 
 

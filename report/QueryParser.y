@@ -34,6 +34,7 @@ import QueryAST
   dow       { TDow p        } 
   doy       { TDoy p        } 
   group     { TGroup p      } 
+  nogroup   { TDontGroup p  }
   limit     { TLimit p      } 
   asc       { TAscending p  } 
   desc      { TDescending p } 
@@ -53,7 +54,8 @@ SUBQUERIES : SUBQUERY                 { [$1]        }
 SUBQUERY : GROUP INDEX CONSTRAINTS { QSubQuery $1 $2 $3 }
 
 GROUP : group             { True  }
-      |                   { False }
+      | nogroup           { False }
+      |                   { True  }
 
 INDEX : extension         { Ext   }
       | language          { Lang  } 
