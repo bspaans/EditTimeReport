@@ -50,18 +50,18 @@ fromQOper        :: Ord a =>  QOper -> (a -> a -> Bool)
 fromQQuery (qs, order, limit) = fromQLimit (fromQOrder (map fromQSubQuery qs) order) limit
 
 
-fromQSubQuery (QSubQuery gr Ext   cons )  = makeQuery gr Ext   cons extInformation
-fromQSubQuery (QSubQuery gr Lang  cons )  = makeQuery gr Lang  cons language
-fromQSubQuery (QSubQuery gr Proj  cons )  = makeQuery gr Proj  cons project
-fromQSubQuery (QSubQuery gr File  cons )  = makeQuery gr File  cons fileName
-fromQSubQuery (QSubQuery gr Year  cons )  = makeQuery gr Year  cons (year . edit)
-fromQSubQuery (QSubQuery gr Month cons )  = makeQuery gr Month cons (month . edit)
-fromQSubQuery (QSubQuery gr Day   cons )  = makeQuery gr Day   cons (day . edit)
-fromQSubQuery (QSubQuery gr Dow   cons )  = makeQuery gr Dow   cons (dow . edit)
-fromQSubQuery (QSubQuery gr Doy   cons )  = makeQuery gr Doy   cons (doy . edit)
+fromQSubQuery q@(QSubQuery _ Ext   _ )  = makeQuery q extInformation
+fromQSubQuery q@(QSubQuery _ Lang  _ )  = makeQuery q language
+fromQSubQuery q@(QSubQuery _ Proj  _ )  = makeQuery q project
+fromQSubQuery q@(QSubQuery _ File  _ )  = makeQuery q fileName
+fromQSubQuery q@(QSubQuery _ Year  _ )  = makeQuery q (year . edit)
+fromQSubQuery q@(QSubQuery _ Month _ )  = makeQuery q (month . edit)
+fromQSubQuery q@(QSubQuery _ Day   _ )  = makeQuery q (day . edit)
+fromQSubQuery q@(QSubQuery _ Dow   _ )  = makeQuery q (dow . edit)
+fromQSubQuery q@(QSubQuery _ Doy   _ )  = makeQuery q (doy . edit)
 
 
-makeQuery gr t c f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
+makeQuery (QSubQuery gr t c) f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
 
 fromQOrder [] _         = []
 fromQOrder cs NoOrder   = cs
@@ -83,32 +83,35 @@ addGrouping False _ = dontGroup
 addGrouping True  f = groupWith f . sortBy (compare `on` f)
 
 
+
 fromQConstraints qc = makeConstraint $ foldr (\a b p -> a p && b p) (const True) q
   where q           = map fromQConstraint qc
 
 
-fromQConstraint (QConstraint Ext oper expr) = maybeConstraint oper extInformation id expr
-fromQConstraint (QConstraint Lang oper expr) = maybeConstraint oper language snd expr
-fromQConstraint (QConstraint Proj oper expr) = maybeConstraint oper project snd expr
-fromQConstraint (QConstraint File oper expr) = f . fileName 
-  where f d = fromQOper oper d $ fromQExpression expr
-fromQConstraint (QConstraint Year oper expr) = numericalConstraint oper year expr
-fromQConstraint (QConstraint Month oper (QString s)) = f . map toUpper . getMonth . month . edit
-  where f d = fromQOper oper d $ map toUpper s
-fromQConstraint (QConstraint Month oper (QInt i)) = f . month . edit
-  where f d = fromQOper oper d i
-fromQConstraint (QConstraint Day oper expr) = numericalConstraint oper day expr
-fromQConstraint (QConstraint Dow oper (QString s)) = f . map toUpper . getDow . dow . edit
-  where f d = fromQOper oper d $ map toUpper s
-fromQConstraint (QConstraint Dow oper (QInt i)) = f . dow . edit
-  where f d = fromQOper oper d i
-fromQConstraint (QConstraint Doy oper expr) = numericalConstraint oper doy expr
+-- Convert the parsed constraints into a predicate
+--
+fromQConstraint (QConstraint Ext op e) = maybeConstraint op extInformation id e
+fromQConstraint (QConstraint Lang op e) = maybeConstraint op language snd e
+fromQConstraint (QConstraint Proj op e) = maybeConstraint op project snd e
+fromQConstraint (QConstraint File op e) = f . fileName 
+  where f d = fromQOper op d $ fromQExpression e
+fromQConstraint (QConstraint Year op e) = numericalConstraint op year e
+fromQConstraint (QConstraint Month op (QString s)) = f . map toUpper . getMonth . month . edit
+  where f d = fromQOper op d $ map toUpper s
+fromQConstraint (QConstraint Month op (QInt i)) = f . month . edit
+  where f d = fromQOper op d i
+fromQConstraint (QConstraint Day op e) = numericalConstraint op day e
+fromQConstraint (QConstraint Dow op (QString s)) = f . map toUpper . getDow . dow . edit
+  where f d = fromQOper op d $ map toUpper s
+fromQConstraint (QConstraint Dow op (QInt i)) = f . dow . edit
+  where f d = fromQOper op d i
+fromQConstraint (QConstraint Doy op e) = numericalConstraint op doy e
 
-numericalConstraint oper g expr = f . g . edit  -- Do type checking in the parser for doy, day, year
-  where f d = fromQOper oper d $ read (fromQExpression expr)
+numericalConstraint op g e = f . g . edit  
+  where f d = fromQOper op d $ read (fromQExpression e)
 
-maybeConstraint oper g h expr = maybe False f . g
-  where f e = fromQOper oper (h e) $ fromQExpression expr
+maybeConstraint op g h e = maybe False f . g
+  where f d = fromQOper op (h d) $ fromQExpression e
 
 
 fromQIndex Ext   = fromMaybe "Unknown extension" . extInformation

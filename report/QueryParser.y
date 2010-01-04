@@ -39,7 +39,7 @@ import QueryLexer
   asc       { TAscending p  } 
   desc      { TDescending p } 
   integer   { TInteger p $$ } 
-  string    { TString p $$ }
+  string    { TString p $$  }
 
 %%
 
@@ -67,17 +67,16 @@ INDEX : extension         { Ext   }
       | doy               { Doy   } 
      
 CONSTRAINTS : '(' CONS ')'  { $2 } 
-        |               { [] } 
+        |                   { [] } 
 
 CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
      |                                  { []         }
 
-CONSTRAINT : INDEX OPERATOR EXPR        {% if elem $1 [Year, Day, Doy]
-	                                     then case $3 of 
+CONSTRAINT : INDEX OPERATOR EXPR        {% if elem $1 [Year, Day, Doy] then case $3 of 
                                                QInt _ -> returnE $ QConstraint $1 $2 $3
-                                               QString s -> failE ("Expecting an integer, but got string '" ++ s ++ '")
-	                                     else returnE $ QConstraint $1 $2 $3 }
+                                               QString s -> failE $ "Expecting an integer, but got string '" ++ s ++ "'" 
+                                           else (returnE $ QConstraint $1 $2 $3) }
 
 OPERATOR : '<'           { QL  }
          | '>'           { QG  }
@@ -95,16 +94,18 @@ ORDER : asc           { Asc     }
 
 LIMIT: limit integer  { Limit $2 }
      |                { NoLimit  }
+
 {
 
-type QQuery = ([QSubQuery], QOrder, QLimit)
-data QSubQuery = QSubQuery Bool QIndex [QConstraint]
-data QOrder = Asc | Desc | NoOrder
-data QLimit = Limit Int | NoLimit 
-data QIndex = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy deriving (Eq, Show)
+type QQuery      = ([QSubQuery], QOrder, QLimit)
+data QSubQuery   = QSubQuery Bool QIndex [QConstraint]
+data QIndex      = Ext | Lang | Proj | File | Year
+                 | Month | Day | Dow | Doy deriving (Eq, Show)
 data QConstraint = QConstraint QIndex QOper QExpr
-data QOper = QL | QLE | QG | QGE | QE | QNE
-data QExpr = QInt Int | QString String
+data QOper       = QL | QLE | QG | QGE | QE | QNE
+data QExpr       = QInt Int | QString String
+data QOrder      = Asc | Desc | NoOrder
+data QLimit      = Limit Int | NoLimit
 
 
 
