@@ -15,30 +15,30 @@ import QueryLexer
 %monad      { E } { thenE } { returnE }
 
 %token 
-  '>'       { TL          } 
-  '<'       { TG          } 
-  '<='      { TLE         } 
-  '>='      { TGE         } 
-  '!='      { TNEqual     } 
-  '=='      { TEqual      } 
-  '('       { TParenOpen  } 
-  ')'       { TParenClose } 
-  ','       { TComma      } 
-  '*'       { TProduct    }
-  extension { TExtension  } 
-  language  { TLanguage   } 
-  project   { TProject    } 
-  filename  { TFilename   } 
-  year      { TYear       } 
-  month     { TMonth      } 
-  day       { TDay        } 
-  dow       { TDow        } 
-  doy       { TDoy        } 
-  group     { TGroup      } 
-  limit     { TLimit      } 
-  asc       { TAscending  } 
-  desc      { TDescending } 
-  integer   { TInteger $$ } 
+  '>'       { TL p          } 
+  '<'       { TG p          } 
+  '<='      { TLE p         } 
+  '>='      { TGE p         } 
+  '!='      { TNEqual p     } 
+  '=='      { TEqual p      } 
+  '('       { TParenOpen p  } 
+  ')'       { TParenClose p } 
+  ','       { TComma p      } 
+  '*'       { TProduct p    } 
+  extension { TExtension p  } 
+  language  { TLanguage p   } 
+  project   { TProject p    } 
+  filename  { TFilename p   } 
+  year      { TYear p       } 
+  month     { TMonth p      } 
+  day       { TDay p        } 
+  dow       { TDow p        } 
+  doy       { TDoy p        } 
+  group     { TGroup p      } 
+  limit     { TLimit p      } 
+  asc       { TAscending p  } 
+  desc      { TDescending p } 
+  integer   { TInteger p $$ } 
 
 
 %%
@@ -91,17 +91,11 @@ QPREFIX : asc            { Asc  }
 {
 
 type QQuery = ([QSubQuery], QPostfix)
-
 data QSubQuery = QSubQuery Bool QIndex [QConstraint]
-
 data QPostfix = Empty | Asc | Desc | Limit Int
-
 data QIndex = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
-
 data QConstraint = QConstraint QIndex QOper QExpr
-
 data QOper = QL | QLE | QG | QGE | QE | QNE
-
 data QExpr = QInt Int 
 
 
@@ -136,8 +130,9 @@ parseError   :: [ConstraintToken]  -> E a
 parseQuery   :: String   -> E QQuery
 parseFile    :: FilePath -> IO (E QQuery)
 
-parseError _ = failE "Parse error"
-parseQuery s = case alexScanTokens s of 
+parseError s = failE $ "Parse error on " ++  if null s then "<eof>"
+                       else showTokenPos (head s)
+parseQuery s = case alexScanTokens' s of 
                  Left err -> failE err
                  Right a -> queryParser a
 parseFile f  = readFile f >>= return . parseQuery

@@ -29,7 +29,7 @@ interactiveQueries stats =
        Just s -> do addHistory s
                     case treeFromQuery s stats of
                        Ok a     -> putStrLn $ treeToString a
-                       Failed e -> putStrLn $ "Parse error: " ++ e
+                       Failed e -> putStrLn e
                     interactiveQueries stats
 
 
