@@ -10,7 +10,10 @@ module Query ( makeTree, interactiveQueries ) where
    4.   nogroup language * nogroup extension
    5.   language limit 5
    6.   language ascending
-   7.   language (month == 1, year == 2010)
+   7.   language (language == "Haskell")
+   8.   language (=="Haskell") # same as no 7
+   9.   language ("Haskell") # same as no 7
+  10.   language (month == 1, year == 2010)
 
  in (pseudo) SQL: 
     
@@ -20,7 +23,10 @@ module Query ( makeTree, interactiveQueries ) where
    4. SELECT language, extension, editTime FROM stats
    5. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
    6. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
-   7. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
+   7. SELECT language, sum(editTime) FROM stats WHERE language = "Haskell" GROUP BY language
+   8. SELECT language, sum(editTime) FROM stats WHERE language = "Haskell" GROUP BY language
+   9. SELECT language, sum(editTime) FROM stats WHERE language = "Haskell" GROUP BY language
+  10. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
  
  Grammar:
 
@@ -33,9 +39,9 @@ module Query ( makeTree, interactiveQueries ) where
    INDEX       := extension | language | project | filename | year | month | day | dow | doy 
    CONSTRAINTS := ε | ( CONS )
    CONS        := CONSTRAINT | CONS , CONSTRAINT
-   CONSTRAINT  := INDEX OPERATOR VALUE
+   CONSTRAINT  := INDEX OPERATOR EXPR | OPERATOR EXPR | EXPR
    OPERATOR    := == | = | <= | < | > | >= | != | /=
-   VALUE       := DIGIT+ | STRING
+   EXPR        := DIGIT+ | STRING
 
 
    tokens  := extension, language, project, filename, year, month, day, dow, doy
@@ -187,7 +193,7 @@ fromQSubQuery q@(QSubQuery _ Day   _ )  = makeQuery q (day . edit)
 fromQSubQuery q@(QSubQuery _ Dow   _ )  = makeQuery q (dow . edit)
 fromQSubQuery q@(QSubQuery _ Doy   _ )  = makeQuery q (doy . edit)
 
-makeQuery (QSubQuery gr t c) f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
+makeQuery (QSubQuery gr t c) f  = (fromQIndex t, fromQConstraints t c, addGrouping gr f)
 
 
 
@@ -221,20 +227,24 @@ addToGrouping cs f = init cs ++ [add (last cs)]
 -- Individual QConstraints are first converted to predicates
 -- and get turned into one Constraint using makeConstraint.
 --
-fromQConstraints :: [QConstraint] -> Constraint
-makePred         :: QConstraint -> Pred EditStats
+fromQConstraints :: QIndex -> [QConstraint] -> Constraint
+makePred         :: QIndex -> QConstraint -> Pred EditStats
 
 
-fromQConstraints qc = makeConstraint $ foldr f (const True) (map makePred qc)
-  where f a b p     = a p && b p
+fromQConstraints i qc = makeConstraint $ foldr f (const True) preds
+  where f a b p     = a p && b p 
+        preds       = map (makePred i) qc
 
-makePred (QC File  op e) = fromQOper op (fromQExpr e) . fileName
-makePred (QC Month op e) = numStringC op e month getMonth
-makePred (QC Dow   op e) = numStringC op e dow getDow
-makePred (QC Year  op e) = numericalC op year e
-makePred (QC Day   op e) = numericalC op day e
-makePred (QC Doy   op e) = numericalC op doy e
-makePred (QC i     op e) = flip (fromQOper op) (fromQExpr e) . fromQIndex i
+makePred i (QC File  op e) = fromQOper op (fromQExpr e) . fileName
+makePred i (QC Month op e) = numStringC op e month getMonth
+makePred i (QC Dow   op e) = numStringC op e dow getDow
+makePred i (QC Year  op e) = numericalC op year e
+makePred i (QC Day   op e) = numericalC op day e
+makePred i (QC Doy   op e) = numericalC op doy e
+makePred i (QC ind   op e) = fromQOper op (fromQExpr e) . fromQIndex ind
+makePred i (QCOE     op e) = makePred i (QC i op e)
+makePred i (QCE         e) = makePred i (QC i QE e)
+
 
 -- helper functions; to do the conversion
 stringC op s f    = fromQOper op (map toUpper s) . map toUpper . f . edit
@@ -243,6 +253,7 @@ maybeC op g h e   = maybe False (fromQOper op (fromQExpr e) . h) . g
 
 numStringC op (QInt i) num _      = fromQOper op i . num . edit
 numStringC op (QString s) num str = stringC op s (str . num)
+
 
 -- Expressions 
 --

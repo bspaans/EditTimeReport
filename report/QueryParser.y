@@ -51,7 +51,9 @@ QUERY : SUBQUERIES ORDER LIMIT { ($1, $2, $3)           }
 SUBQUERIES : SUBQUERY                 { [$1]        }
            | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
 
-SUBQUERY : GROUP INDEX CONSTRAINTS { QSubQuery $1 $2 $3 }
+SUBQUERY : GROUP INDEX CONSTRAINTS {% if typeCheckConstraints $2 $3 
+                                        then returnE $ QSubQuery $1 $2 $3
+                                        else failE "Parse error in constraints: expecting an integer"}
 
 GROUP : group             { True  }
       | nogroup           { False }
@@ -74,10 +76,9 @@ CONS : CONSTRAINT                       { [$1]       }
      | CONS ',' CONSTRAINT              { $1 ++ [$3] }
      |                                  { []         }
 
-CONSTRAINT : INDEX OPERATOR EXPR        {% if elem $1 [Year, Day, Doy] then case $3 of 
-                                               QInt _ -> returnE $ QC $1 $2 $3
-                                               QString s -> failE $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
-                                           else (returnE $ QC $1 $2 $3) }
+CONSTRAINT : INDEX OPERATOR EXPR        {% typeCheckQC $1 $2 $3 }
+           | OPERATOR EXPR              { QCOE $1 $2 }
+           | EXPR                       { QCE $1 } 
 
 OPERATOR : '<'           { QL  }
          | '>'           { QG  }
@@ -98,6 +99,20 @@ LIMIT: limit integer  { Limit $2 }
 
 {
 
+typeCheckConstraints i cs = all typeCheck cs
+  where typeCheck (QC _ _ _) = True
+        typeCheck (QCOE _ e) = check e
+        typeCheck (QCE e) = check e
+        check e = if elem i [Year, Day, Doy] 
+                    then case e of { QInt _ -> True ; _ -> False }
+                    else True
+                            
+
+typeCheckQC a b c = if elem a [Year, Day, Doy] 
+                      then case c of 
+                            QInt _ -> returnE $ QC a b c
+                            QString s -> failE $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
+                      else (returnE $ QC a b c)
 parseError   :: [ConstraintToken]  -> E a
 parseQuery   :: String   -> E QQuery
 parseFile    :: FilePath -> IO (E QQuery)
