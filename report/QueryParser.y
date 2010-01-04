@@ -1,6 +1,6 @@
 {
 module QueryParser (QQuery, QConstraint(..), QSubQuery(..)
-                   , QOper(..), QExpr(..)
+                   , QOper(..), QExpr(..), QOrder(..), QLimit(..)
                    , QIndex(..), parseQuery, E(..)
                    ) where
 
@@ -44,8 +44,8 @@ import QueryLexer
 %%
 
 
-QUERY : SUBQUERIES QPREFIX { ($1, $2)    } 
-      |                    { ([], Empty) }
+QUERY : SUBQUERIES ORDER LIMIT { ($1, $2, $3)           } 
+      |                        { ([], NoOrder, NoLimit) }
 
 
 SUBQUERIES : SUBQUERY                 { [$1]        }
@@ -84,15 +84,18 @@ OPERATOR : '<'           { QL  }
 
 EXPR : integer           { QInt $1 }
 
-QPREFIX : asc            { Asc  }
-        | desc           { Desc }
-        |                { Empty }
+ORDER : asc           { Asc     }
+      | desc          { Desc    }
+      |               { NoOrder }
 
+LIMIT: limit integer  { Limit $2 }
+     |                { NoLimit  }
 {
 
-type QQuery = ([QSubQuery], QPostfix)
+type QQuery = ([QSubQuery], QOrder, QLimit)
 data QSubQuery = QSubQuery Bool QIndex [QConstraint]
-data QPostfix = Empty | Asc | Desc | Limit Int
+data QOrder = Asc | Desc | NoOrder
+data QLimit = Limit Int | NoLimit 
 data QIndex = Ext | Lang | Proj | File | Year | Month | Day | Dow | Doy
 data QConstraint = QConstraint QIndex QOper QExpr
 data QOper = QL | QLE | QG | QGE | QE | QNE

@@ -46,7 +46,7 @@ addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 fromQOper        :: Ord a =>  QOper -> (a -> a -> Bool)
 
 
-fromQQuery (qs, postfix) = map fromQSubQuery qs
+fromQQuery (qs, order, limit) = fromQLimit (map fromQSubQuery qs) limit
 
 
 fromQSubQuery (QSubQuery gr Ext   cons )  = makeQuery gr Ext   cons extInformation
@@ -61,6 +61,21 @@ fromQSubQuery (QSubQuery gr Doy   cons )  = makeQuery gr Doy   cons (doy . edit)
 
 
 makeQuery gr t c f  = (fromQIndex t, fromQConstraints c, addGrouping gr f)
+
+addQPostfix [] _         = []
+addQPostfix cs NoOrder   = cs
+addQPostfix cs Asc       = cs
+addQPostfix cs Desc      = cs
+
+
+fromQLimit cs NoLimit   = cs
+fromQLimit [] _         = []
+fromQLimit cs (Limit i) = addToGrouping cs (take i)
+
+
+addToGrouping [] _ = error "Empty query, can't add to grouping"
+addToGrouping cs f = init cs ++ [add (last cs)]
+  where add (v, cs, gr) = (v, cs, f . gr)
 
 
 addGrouping False _ = dontGroup
@@ -170,10 +185,9 @@ treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
  
  Grammar:
 
-   QUERY       := ε | SUBQUERIES QPREFIX?
+   QUERY       := ε | SUBQUERIES ORDER? LIMIT?
    SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
    SUBQUERY    := group? INDEX CONSTRAINTS
-   QPREFIX     := LIMIT | ORDER
    LIMIT       := limit DIGIT+
    ORDER       := ascending | descending | asc | desc
    INDEX       := extension | language | project | filename | year | month | day | dow | doy 
