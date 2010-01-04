@@ -155,7 +155,7 @@ askMatches :: IO Matches
 
 -- TODO: check for pathSeparator at end of path
 --
-askSourceDir = do putStrLn "\n  ================= Source Directories ============\n"
+askSourceDir = do putStrLn "\n\n  ================= Source Directories ============\n"
                   putStrLn "\n  If you have a directory containing different project directories, "
                   putStrLn "  you can let this program tag the edits in those directories with "
                   putStrLn "  their projects. For example: if you have a directory ~/src containing "
@@ -167,7 +167,7 @@ askSourceDir = do putStrLn "\n  ================= Source Directories ===========
                   return m
 
 
-askLanguages = do putStrLn "\n  ==================== Languages ==================\n"
+askLanguages = do putStrLn "\n\n  ==================== Languages ==================\n"
                   putStrLn "  If you have a directory ~/src containing directories "
                   putStrLn "  ~/src/python/ and ~/src/haskell/ you can enter ~/src/"
                   putStrLn "  and let the program figure out the language of each edit."

@@ -18,6 +18,7 @@ data Options = Options {
                          interactive :: Bool
                        , askOptions  :: Bool
                        , ext         :: Extensions          -- <not doing anything yet>
+                       , output      :: [String]
                        , lang        :: [(String, String)]
                        , proj        :: [(String, String)]
                        , home        :: Maybe String        -- </not doing anything yet>
@@ -30,7 +31,8 @@ defaultOptions = Options {
                          , lang = []
                          , proj = []
                          , home = Nothing 
-                         , askOptions = False}
+                         , askOptions = False
+                         , output = []}
 
 options :: [ OptDescr (Options -> IO Options) ]
 options = [
@@ -39,6 +41,7 @@ options = [
          , Option "H" ["home"]        (ReqArg setHome "HOME")     "Set HOME directory"
          , Option "i" ["interactive"] (NoArg setInteractive)      "Start interactive query session"
          , Option "l" ["language"]    (ReqArg setLanguage "PATH") "Set language directory"
+         , Option "o" ["output"]      (ReqArg setOutput "PATH")   "See file to output to"
           ]
 
 
@@ -47,6 +50,7 @@ outputHelp _         = putStrLn (usageInfo usage options) >> exitWith ExitSucces
 setHome h opt        = return opt { home = Just h }
 setInteractive opt   = return opt { interactive = True, askOptions = True }
 setLanguage path opt = return opt { lang = parseDescription path : (lang opt) } 
+setOutput path opt   = return opt { output = path : (output opt) } 
 
 parseDescription :: String -> (String, String)
 parseDescription s = case getDesc of 
