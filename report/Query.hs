@@ -132,16 +132,20 @@ treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
 -- Interactive Query prompt using editline
 --
 interactiveQueries :: Stats -> IO()
-interactiveQueries stats = 
-  do maybeLine <- readline "> " 
-     case maybeLine of
-       Nothing     -> do putStr "\n" ; return ()
-       Just "exit" -> do putStr "\n" ; return ()
-       Just s -> do addHistory s
-                    case treeFromQuery s stats of
-                       Ok a     -> putStrLn $ treeToString a
-                       Failed e -> putStrLn e
-                    interactiveQueries stats
+interactiveQueries stats = putStrLn (unlines ["Time Report 1.0a, interactive session"
+                                             , "Copyright 2009-2010, Bart Spaans"
+                                             , "Type \"help\" for more information"]) >> interactiveQ'
+  where interactiveQ' = do
+         maybeLine <- readline "> " 
+         case maybeLine of
+           Nothing     -> do putStr "\n" ; return ()
+           Just ""     -> interactiveQ'
+           Just "exit" -> do putStr "\n" ; return ()
+           Just s -> do addHistory s
+                        case treeFromQuery s stats of
+                           Ok a     -> putStrLn $ treeToString a
+                           Failed e -> putStrLn e
+                        interactiveQ' 
 
 
 
