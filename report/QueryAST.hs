@@ -11,8 +11,7 @@ module QueryAST ( QQuery, QConstraint(..), QSubQuery(..)
 type QCommand    = Either QQuery QAssign 
 type QQuery      = [QSubQuery]
 data QAssign     = QAssign String QQuery
-data QCall       = QCall String
-data QSubQuery   = QSubQuery Bool QIndex [QConstraint] QOrder QLimit
+data QSubQuery   = QSubQuery Bool QIndex [QConstraint] QOrder QLimit | QCall String
 data QIndex      = Ext | Lang | Proj | File | Year
                  | Month | Day | Dow | Doy deriving (Eq, Show)
 data QConstraint = QC QIndex QOper QExpr | QCOE QOper QExpr | QCE QExpr

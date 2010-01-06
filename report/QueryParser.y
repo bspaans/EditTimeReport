@@ -59,6 +59,7 @@ QUERY : SUBQUERY            { [$1]        }
 SUBQUERY : GROUP INDEX CONSTRAINTS ORDER LIMIT {% if typeCheckConstraints $2 $3 
                                         then returnE $ QSubQuery $1 $2 $3 $4 $5
                                         else failE "Parse error in constraints: expecting an integer"}
+         | ident                               { QCall $1 }
 
 GROUP : group             { True  }
       | nogroup           { False }
