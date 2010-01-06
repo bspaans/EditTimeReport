@@ -2,19 +2,21 @@ module StatOptions ( StatOptions(..)                       -- StatOptions
                    , Description, Extension, Extensions    -- Type synonyms
                    , SplitPath, Match, Matches             -- Type synonyms
                    , Languages, Projects                   -- Type synonyms
+                   , parseDescription                      -- Match parser for Main
                    , askStatOptions                        -- Interactive session
                    , defaultSO, defaultIOSO                -- Debugging SO's
                    , extensionDict
                    ) where
 
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
-import Text.Printf
-import System (getEnv)
-import System.FilePath
+import Data.Char
+import Data.List
 import Control.Monad
 import Control.Arrow
 import System
+import System.FilePath
 import System.Console.Editline.Readline
+import Text.Printf
 
 
 
@@ -41,6 +43,20 @@ type Languages   = Matches
 type Projects    = Matches
 
 
+-- Matches — Description Parsers
+--
+parseDescription :: String -> (String, String)
+parseDescription [] = ("", "")
+parseDescription s = case getDesc of 
+                       Nothing -> (s, dropTrailingPathSeparator . last . splitPath $ s)
+                       Just (x,y)  -> (reverse x, reverse y)
+  where reversed = reverse s
+        getDesc = do c <- elemIndex ')' reversed
+                     o <- elemIndex '(' reversed
+                     if all isSpace (take c reversed) 
+                       then return (drop (o + 1) reversed, 
+                            take (o + 1) (drop (c + 1) reversed))
+                       else Nothing
 
 -- Some defaults
 --

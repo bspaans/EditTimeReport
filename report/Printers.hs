@@ -1,16 +1,14 @@
-{-# LANGUAGE FlexibleInstances #-}
-
-module Printers ( Printer(printReport)
-                 , PrintOptions(..), POption (..)
-                 , isSet, defaultPO
-                 , touched
-                 , months, headers     -- String data
-                 , getMonth, getDow 
-                 , showTimeE, showTime -- Time strings
-                 , brackets, braced, showSub, showLanguage, showProject
-                 , showExtension, treeToString
-                 , module Report
-                 ) where
+module Printers ( Printer(..)
+                , PrintOptions(..), POption (..)
+                , isSet, defaultPO
+                , touched
+                , months, headers     -- String data
+                , getMonth, getDow 
+                , showTimeE, showTime -- Time strings
+                , brackets, braced, showSub, showLanguage, showProject
+                , showExtension, treeToString
+                , module Report
+                ) where
 
 import Report
 import Text.Printf

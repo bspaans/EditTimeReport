@@ -1,13 +1,8 @@
 module Main where
 
 
--- Currently only implemented HTML reports
---
-import Printers
-import HtmlPrinter
 import Query
 import Char
-import List
 import System 
 import System.Console.GetOpt
 import System.IO
@@ -17,6 +12,7 @@ import System.FilePath
 import System.Directory
 import Data.Maybe
 
+import Stats
 
 data Options = Options {
                          interactive :: Bool
@@ -58,18 +54,6 @@ setLanguage path opt = return opt { lang = parseDescription path : (lang opt) }
 setProject  path opt = return opt { proj = parseDescription path : (proj opt) } 
 setOutput path opt   = return opt { output = path : (output opt) } 
 
-parseDescription :: String -> (String, String)
-parseDescription [] = ("", "")
-parseDescription s = case getDesc of 
-                       Nothing -> (s, dropTrailingPathSeparator . last . splitPath $ s)
-                       Just (x,y)  -> (reverse x, reverse y)
-  where reversed = reverse s
-        getDesc = do c <- elemIndex ')' reversed
-                     o <- elemIndex '(' reversed
-                     if all isSpace (take c reversed) 
-                       then return (drop (o + 1) reversed, 
-                            take (o + 1) (drop (c + 1) reversed))
-                       else Nothing
 
 
 toMatches :: [(String, String)] -> Matches
@@ -89,7 +73,6 @@ main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           when (msgs /= []) (error $ concat msgs)
           opts <- foldl (>>=) (return defaultOptions) actions
           so <- return $ makeStatOptions opts
-          po <- return defaultPO
           if null nonOpts
             then putStrLn usage
             else do so <- if askOptions opts then askStatOptions else so
