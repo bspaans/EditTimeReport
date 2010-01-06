@@ -180,37 +180,38 @@ qCompleter s = return (filter (startsWith s) known)
 -- group function)
 --
 fromQCommand     :: Env -> QCommand -> Either Query Env
-fromQQuery       :: QQuery -> Query
-fromQSubQuery    :: QSubQuery -> SubQuery
+fromQQuery       :: Env -> QQuery -> Query
+fromQSubQuery    :: Env -> QSubQuery -> Query
 fromQIndex       :: QIndex -> (EditStats -> String)
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 
 
-fromQCommand _   (Left q)    = Left $ fromQQuery q
+fromQCommand env (Left q)  = Left $ fromQQuery env q
 fromQCommand env (Right a) = Right $ i a
-  where i (QAssign s q) = D.insert s (fromQQuery q) env
+  where i (QAssign s q) = D.insert s (fromQQuery env q) env
 
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function
 -- 
-fromQQuery qs = map fromQSubQuery qs
+fromQQuery env = concatMap (fromQSubQuery env)
 
 
 
 
 -- Sub queries
 --
-fromQSubQuery q@(QSubQuery _ Ext   _ _ _) = makeQuery q extInformation
-fromQSubQuery q@(QSubQuery _ Lang  _ _ _) = makeQuery q language
-fromQSubQuery q@(QSubQuery _ Proj  _ _ _) = makeQuery q project
-fromQSubQuery q@(QSubQuery _ File  _ _ _) = makeQuery q fileName
-fromQSubQuery q@(QSubQuery _ Year  _ _ _) = makeQuery q (year . edit)
-fromQSubQuery q@(QSubQuery _ Month _ _ _) = makeQuery q (month . edit)
-fromQSubQuery q@(QSubQuery _ Day   _ _ _) = makeQuery q (day . edit)
-fromQSubQuery q@(QSubQuery _ Dow   _ _ _) = makeQuery q (dow . edit)
-fromQSubQuery q@(QSubQuery _ Doy   _ _ _) = makeQuery q (doy . edit)
+fromQSubQuery _ q@(QSubQuery _ Ext   _ _ _) = makeQuery q extInformation
+fromQSubQuery _ q@(QSubQuery _ Lang  _ _ _) = makeQuery q language
+fromQSubQuery _ q@(QSubQuery _ Proj  _ _ _) = makeQuery q project
+fromQSubQuery _ q@(QSubQuery _ File  _ _ _) = makeQuery q fileName
+fromQSubQuery _ q@(QSubQuery _ Year  _ _ _) = makeQuery q (year . edit)
+fromQSubQuery _ q@(QSubQuery _ Month _ _ _) = makeQuery q (month . edit)
+fromQSubQuery _ q@(QSubQuery _ Day   _ _ _) = makeQuery q (day . edit)
+fromQSubQuery _ q@(QSubQuery _ Dow   _ _ _) = makeQuery q (dow . edit)
+fromQSubQuery _ q@(QSubQuery _ Doy   _ _ _) = makeQuery q (doy . edit)
+fromQSubQuery env (QCall s)                 = env D.! s
 
-makeQuery (QSubQuery gr t c o l) f  = (view, constraints, grouping)
+makeQuery (QSubQuery gr t c o l) f  = [(view, constraints, grouping)]
    where view = fromQIndex t
          constraints = fromQConstraints t c
          grouping = fromQLimit l . fromQOrder o . addGrouping gr f
