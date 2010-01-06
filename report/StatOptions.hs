@@ -50,16 +50,21 @@ toMatches        :: [(String, String)] -> Matches
 
 
 parseDescription [] = ("", "")
-parseDescription s  = maybe (s, dropTrailingPathSeparator . last . splitPath $ s)  (\(x, y) -> (reverse x, reverse y) getDesc 
-  where reversed = reverse s
-        getDesc = do c <- elemIndex ')' reversed
-                     o <- elemIndex '(' reversed
-                     if all isSpace (take c reversed) 
-                       then return (drop (o + 1) reversed, 
-                            take (o + 1) (drop (c + 1) reversed))
-                       else Nothing
+parseDescription s  = maybe noDesc desc getDesc 
+  where reversed    = reverse s
+        desc (x,y)  = (reverse x, reverse y)
+        noDesc      = (s, dropTrailingPathSeparator . last . splitPath $ s)
+        getDesc     = do c <- elemIndex ')' reversed
+                         o <- elemIndex '(' reversed
+                         if all isSpace (take c reversed) 
+                           then return (drop (o + 1) reversed, 
+                                        take (o + 1) (drop (c + 1) reversed))
+                           else Nothing
+
 
 toMatches = map (first $ splitPath . addTrailingPathSeparator)
+
+
 
 -- Some defaults
 --

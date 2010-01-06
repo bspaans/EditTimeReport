@@ -17,21 +17,19 @@ data Options = Options {
                          interactive :: Bool
                        , askOptions  :: Bool
                        , ext         :: Extensions          
-                       , output      :: [String]           -- not doing anything yet
                        , lang        :: [(String, String)]
                        , proj        :: [(String, String)]
                        , home        :: Maybe (IO String)  
                        } 
 
 defaultOptions :: Options
-defaultOptions = Options { 
-                           interactive = False
+defaultOptions = Options { interactive = False
                          , ext = extensionDict
                          , lang = []
                          , proj = []
                          , home = Just (getHomeDirectory)
                          , askOptions = False
-                         , output = []}
+                         }
 
 options :: [ OptDescr (Options -> IO Options) ]
 options = [
@@ -40,7 +38,6 @@ options = [
          , Option "H" ["home"]        (ReqArg setHome "HOME")     "Set HOME directory"
          , Option "i" ["interactive"] (NoArg setInteractive)      "Start interactive query session"
          , Option "l" ["language"]    (ReqArg setLanguage "PATH") "Set languages directory"
-         , Option "o" ["output"]      (ReqArg setOutput "PATH")   "See file to output to"
          , Option "p" ["project"]     (ReqArg setProject "PATH")  "Set projects directory"
           ]
 
@@ -51,7 +48,6 @@ setHome h opt        = return opt { home = Just (return h) }
 setInteractive opt   = return opt { interactive = True, askOptions = True }
 setLanguage path opt = return opt { lang = parseDescription path : (lang opt) } 
 setProject  path opt = return opt { proj = parseDescription path : (proj opt) } 
-setOutput path opt   = return opt { output = path : (output opt) } 
 
 
 makeStatOptions :: Options -> IO StatOptions

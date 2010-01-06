@@ -44,15 +44,15 @@ import QueryAST
 %%
 
 
-QUERY : SUBQUERIES ORDER LIMIT { ($1, $2, $3)           } 
-      |                        { ([], NoOrder, NoLimit) }
+QUERY : SUBQUERIES  { $1 } 
+      |             { [] }
 
 
 SUBQUERIES : SUBQUERY                 { [$1]        }
            | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
 
-SUBQUERY : GROUP INDEX CONSTRAINTS {% if typeCheckConstraints $2 $3 
-                                        then returnE $ QSubQuery $1 $2 $3
+SUBQUERY : GROUP INDEX CONSTRAINTS ORDER LIMIT {% if typeCheckConstraints $2 $3 
+                                        then returnE $ QSubQuery $1 $2 $3 $4 $5
                                         else failE "Parse error in constraints: expecting an integer"}
 
 GROUP : group             { True  }

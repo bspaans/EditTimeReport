@@ -31,9 +31,9 @@ module Query ( makeTree, interactiveQueries ) where
  
  Grammar:
 
-   QUERY       := ε | SUBQUERIES ORDER? LIMIT?
+   QUERY       := ε | SUBQUERIES
    SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
-   SUBQUERY    := GROUPING INDEX CONSTRAINTS
+   SUBQUERY    := GROUPING INDEX CONSTRAINTS ORDER? LIMIT?
    LIMIT       := limit DIGIT+
    ORDER       := ascending | descending | asc | desc
    GROUPING    := group | & | nogroup | !
@@ -86,6 +86,10 @@ makeConstraint p = con ([], [])
         con (yes, no) (s:st) = con n st
           where n = if p s then (s : yes, no) else (yes, s:no)
 
+
+-- Executing Queries
+--
+--executeQueries :: Queries -> [StatsTree]
 
 
 -- Executing a Query 
@@ -170,42 +174,38 @@ addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function
 -- 
-fromQQuery (qs, order, limit) = limiting
+fromQQuery qs = subs
   where subs = map fromQSubQuery qs
-        ordering = fromQOrder subs order
-        limiting = fromQLimit ordering limit
+--        ordering = fromQOrder subs order
 
 
 -- Ordering is done before passing the grouped Stats
 -- on to the constraint function
 --
-fromQOrder [] _         = []
-fromQOrder cs NoOrder   = cs
-fromQOrder cs Asc       = addToGrouping cs (sortBy (compare `on` sumTime))
-fromQOrder cs Desc      = addToGrouping cs (sortBy (flip compare `on` sumTime))
+fromQOrder :: QOrder -> [Stats] -> [Stats]
+fromQOrder NoOrder = id
+fromQOrder Asc     = sortBy (compare `on` sumTime)
+fromQOrder Desc    = sortBy (flip compare `on` sumTime)
 
 
--- Limiting is done before passing the constraint 
--- function as well
---
-fromQLimit [] _         = []
-fromQLimit cs NoLimit   = cs
-fromQLimit cs (Limit i) = addToGrouping cs (take i)
+fromQLimit :: QLimit -> [Stats] -> [Stats]
+fromQLimit NoLimit   = id
+fromQLimit (Limit i) = take i 
 
 
 -- Sub queries
 --
-fromQSubQuery q@(QSubQuery _ Ext   _ )  = makeQuery q extInformation
-fromQSubQuery q@(QSubQuery _ Lang  _ )  = makeQuery q language
-fromQSubQuery q@(QSubQuery _ Proj  _ )  = makeQuery q project
-fromQSubQuery q@(QSubQuery _ File  _ )  = makeQuery q fileName
-fromQSubQuery q@(QSubQuery _ Year  _ )  = makeQuery q (year . edit)
-fromQSubQuery q@(QSubQuery _ Month _ )  = makeQuery q (month . edit)
-fromQSubQuery q@(QSubQuery _ Day   _ )  = makeQuery q (day . edit)
-fromQSubQuery q@(QSubQuery _ Dow   _ )  = makeQuery q (dow . edit)
-fromQSubQuery q@(QSubQuery _ Doy   _ )  = makeQuery q (doy . edit)
+fromQSubQuery q@(QSubQuery _ Ext   _ _ _) = makeQuery q extInformation
+fromQSubQuery q@(QSubQuery _ Lang  _ _ _) = makeQuery q language
+fromQSubQuery q@(QSubQuery _ Proj  _ _ _) = makeQuery q project
+fromQSubQuery q@(QSubQuery _ File  _ _ _) = makeQuery q fileName
+fromQSubQuery q@(QSubQuery _ Year  _ _ _) = makeQuery q (year . edit)
+fromQSubQuery q@(QSubQuery _ Month _ _ _) = makeQuery q (month . edit)
+fromQSubQuery q@(QSubQuery _ Day   _ _ _) = makeQuery q (day . edit)
+fromQSubQuery q@(QSubQuery _ Dow   _ _ _) = makeQuery q (dow . edit)
+fromQSubQuery q@(QSubQuery _ Doy   _ _ _) = makeQuery q (doy . edit)
 
-makeQuery (QSubQuery gr t c) f  = (fromQIndex t, fromQConstraints t c, addGrouping gr f)
+makeQuery (QSubQuery gr t c o l) f  = (fromQIndex t, fromQConstraints t c, fromQLimit l . fromQOrder o . addGrouping gr f)
 
 
 
