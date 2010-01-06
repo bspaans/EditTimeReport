@@ -2,7 +2,7 @@ module StatOptions ( StatOptions(..)                       -- StatOptions
                    , Description, Extension, Extensions    -- Type synonyms
                    , SplitPath, Match, Matches             -- Type synonyms
                    , Languages, Projects                   -- Type synonyms
-                   , parseDescription                      -- Match parser for Main
+                   , parseDescription, toMatches           -- Match parser for Main
                    , askStatOptions                        -- Interactive session
                    , defaultSO, defaultIOSO                -- Debugging SO's
                    , extensionDict
@@ -46,10 +46,11 @@ type Projects    = Matches
 -- Matches — Description Parsers
 --
 parseDescription :: String -> (String, String)
+toMatches        :: [(String, String)] -> Matches
+
+
 parseDescription [] = ("", "")
-parseDescription s = case getDesc of 
-                       Nothing -> (s, dropTrailingPathSeparator . last . splitPath $ s)
-                       Just (x,y)  -> (reverse x, reverse y)
+parseDescription s  = maybe (s, dropTrailingPathSeparator . last . splitPath $ s)  (\(x, y) -> (reverse x, reverse y) getDesc 
   where reversed = reverse s
         getDesc = do c <- elemIndex ')' reversed
                      o <- elemIndex '(' reversed
@@ -57,6 +58,8 @@ parseDescription s = case getDesc of
                        then return (drop (o + 1) reversed, 
                             take (o + 1) (drop (c + 1) reversed))
                        else Nothing
+
+toMatches = map (first $ splitPath . addTrailingPathSeparator)
 
 -- Some defaults
 --

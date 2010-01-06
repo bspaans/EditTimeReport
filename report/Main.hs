@@ -2,7 +2,6 @@ module Main where
 
 
 import Query
-import Char
 import System 
 import System.Console.GetOpt
 import System.IO
@@ -54,10 +53,6 @@ setLanguage path opt = return opt { lang = parseDescription path : (lang opt) }
 setProject  path opt = return opt { proj = parseDescription path : (proj opt) } 
 setOutput path opt   = return opt { output = path : (output opt) } 
 
-
-
-toMatches :: [(String, String)] -> Matches
-toMatches = map (first $ splitPath . addTrailingPathSeparator)
 
 makeStatOptions :: Options -> IO StatOptions
 makeStatOptions opts = do h <- fromMaybe (return "none") $ home opts
