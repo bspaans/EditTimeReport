@@ -62,6 +62,9 @@ import qualified Data.Map as D
 import Maybe
 import Control.Applicative
 import System.Console.Editline.Readline
+import System.Directory
+import System.FilePath
+import Control.Monad
 
 
 -- Each query is represented by sub queries, 
@@ -139,7 +142,7 @@ makeNode s yes cs = Node (n tr) s tr
 -- of a String in the Query language.
 --
 treeFromQuery s env st = parsed
-  where parsed         = f . fromQCommand env <$> parseQuery s
+  where parsed         = f <$> parseQuery s `thenE` fromQCommand env
         f (Left s)     = Left $ flip makeTree st s
         f (Right e)    = Right e
 
@@ -152,13 +155,15 @@ interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive 
                                                , "Copyright 2009-2010, Bart Spaans"
                                                , "Type \"help\" for more information"])
                               setCompletionEntryFunction (Just qCompleter)
+                              loc <- historyLocation
+                              readHistory loc
                               interactiveQ' (D.fromList [])
   where interactiveQ' env = do
          maybeLine <- readline "> " 
          case maybeLine of
-           Nothing     -> do putStr "\n" ; return ()
+           Nothing     -> do putStr "\n" ; onExit ; return ()
            Just ""     -> interactiveQ' env
-           Just "exit" -> do putStr "\n" ; return ()
+           Just "exit" -> do putStr "\n" ; onExit ; return ()
            Just s -> do addHistory s
                         case treeFromQuery s env stats of
                            Ok a     -> case a of 
@@ -166,6 +171,12 @@ interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive 
                                          Right e -> putStrLn "Definition added" >> interactiveQ' e
                            Failed e -> putStrLn e
                         interactiveQ' env
+
+onExit = do loc <- historyLocation
+            writeHistory loc
+
+historyLocation :: IO FilePath
+historyLocation = (</> ".report_history") <$> getUserDocumentsDirectory
 
 qCompleter :: String -> IO [String]
 qCompleter s = return (filter (startsWith s) known)
@@ -179,21 +190,22 @@ qCompleter s = return (filter (startsWith s) known)
 -- SubQueries (ie. a view function, a constraint and a 
 -- group function)
 --
-fromQCommand     :: Env -> QCommand -> Either Query Env
-fromQQuery       :: Env -> QQuery -> Query
-fromQSubQuery    :: Env -> QSubQuery -> Query
+fromQCommand     :: Env -> QCommand -> E (Either Query Env)
+fromQQuery       :: Env -> QQuery -> E Query
+fromQSubQuery    :: Env -> QSubQuery -> E Query
 fromQIndex       :: QIndex -> (EditStats -> String)
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 
 
-fromQCommand env (Left q)  = Left $ fromQQuery env q
-fromQCommand env (Right a) = Right $ i a
-  where i (QAssign s q) = D.insert s (fromQQuery env q) env
+fromQCommand env (Left q)  = Left <$> fromQQuery env q
+fromQCommand env (Right a) = Right <$> i a
+  where i (QAssign s q) = flip (D.insert s) env <$> (fromQQuery env q) 
 
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function
 -- 
-fromQQuery env = concatMap (fromQSubQuery env)
+fromQQuery env []     = Ok []
+fromQQuery env (c:cs) = fromQSubQuery env c `thenE` (\a -> (a++) <$> (fromQQuery env cs))
 
 
 
@@ -209,9 +221,11 @@ fromQSubQuery _ q@(QSubQuery _ Month _ _ _) = makeQuery q (month . edit)
 fromQSubQuery _ q@(QSubQuery _ Day   _ _ _) = makeQuery q (day . edit)
 fromQSubQuery _ q@(QSubQuery _ Dow   _ _ _) = makeQuery q (dow . edit)
 fromQSubQuery _ q@(QSubQuery _ Doy   _ _ _) = makeQuery q (doy . edit)
-fromQSubQuery env (QCall s)                 = env D.! s
+fromQSubQuery env (QCall s)                 = case D.lookup s env of 
+                                                Just q -> Ok q
+                                                Nothing -> Failed $ "Unknown definition `" ++ s ++ "'"
 
-makeQuery (QSubQuery gr t c o l) f  = [(view, constraints, grouping)]
+makeQuery (QSubQuery gr t c o l) f  = Ok [(view, constraints, grouping)]
    where view = fromQIndex t
          constraints = fromQConstraints t c
          grouping = fromQLimit l . fromQOrder o . addGrouping gr f
@@ -266,8 +280,8 @@ makePred         :: QIndex -> QConstraint -> Pred EditStats
 
 
 fromQConstraints i qc = makeConstraint $ foldr f (const True) preds
-  where f a b p     = a p && b p 
-        preds       = map (makePred i) qc
+  where f a b p       = a p && b p 
+        preds         = map (makePred i) qc
 
 makePred i (QC File  op e) = fromQOper op (fromQExpr e) . fileName
 makePred i (QC Month op e) = numStringC op e month getMonth
