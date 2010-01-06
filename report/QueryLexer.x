@@ -8,67 +8,70 @@ import Data.Either
 
 $digit = 0-9
 $alpha = [a-zA-Z]
+$upper = A-Z
 $ident = [a-zA-Z0-9]
 $s     = [^'"']
 
 tokens :-
 
-  $white+     ;
-  "#".*       ;
-  ">"         { \p s -> TL p                      } 
-  "<"         { \p s -> TG p                      } 
-  "<="        { \p s -> TLE p                     } 
-  ">="        { \p s -> TGE p                     } 
-  "=="        { \p s -> TEqual p                  } 
-  "="         { \p s -> TEqual p                  }
-  "!="        { \p s -> TNEqual p                 } 
-  "/="        { \p s -> TNEqual p                 } 
-  "("         { \p s -> TParenOpen p              } 
-  ")"         { \p s -> TParenClose p             } 
-  ","         { \p s -> TComma p                  } 
-  "*"         { \p s -> TProduct p                } 
-  extension   { \p s -> TExtension p              } 
-  extensions  { \p s -> TExtension p              }
-  exts        { \p s -> TExtension p              }
-  ext         { \p s -> TExtension p              }
-  e           { \p s -> TExtension p              }
-  languages   { \p s -> TLanguage p               } 
-  language    { \p s -> TLanguage p               } 
-  langs       { \p s -> TLanguage p               } 
-  lang        { \p s -> TLanguage p               } 
-  l           { \p s -> TLanguage p               } 
-  projects    { \p s -> TProject p                } 
-  project     { \p s -> TProject p                } 
-  proj        { \p s -> TProject p                } 
-  p           { \p s -> TProject p                } 
-  filenames   { \p s -> TFilename p               } 
-  filename    { \p s -> TFilename p               } 
-  files       { \p s -> TFilename p               } 
-  file        { \p s -> TFilename p               } 
-  f           { \p s -> TFilename p               } 
-  years       { \p s -> TYear p                   } 
-  year        { \p s -> TYear p                   } 
-  y           { \p s -> TYear p                   } 
-  months      { \p s -> TMonth p                  } 
-  month       { \p s -> TMonth p                  } 
-  m           { \p s -> TMonth p                  } 
-  days        { \p s -> TDay p                    } 
-  day         { \p s -> TDay p                    } 
-  da          { \p s -> TDay p                    } 
-  dow         { \p s -> TDow p                    } 
-  doy         { \p s -> TDoy p                    } 
-  ascending   { \p s -> TAscending p              } 
-  descending  { \p s -> TDescending p             } 
-  asc         { \p s -> TAscending p              } 
-  desc        { \p s -> TDescending p             } 
-  limit       { \p s -> TLimit p                  } 
-  group       { \p s -> TGroup p                  } 
-  "&"         { \p s -> TGroup p                  } 
-  nogrouping  { \p s -> TDontGroup p              }
-  nogroup     { \p s -> TDontGroup p              }
-  "!"         { \p s -> TDontGroup p              }
-  $digit+     { \p s -> TInteger p (read s)       } 
-  \"$s*\"     { \p s -> TString p (init (tail s)) } 
+  $white+       ;
+  "#".*         ;
+  ">"           { \p s -> TL p                      }
+  "<"           { \p s -> TG p                      }
+  "<="          { \p s -> TLE p                     }
+  ">="          { \p s -> TGE p                     }
+  "=="          { \p s -> TEqual p                  }
+  "="           { \p s -> TEqual p                  }
+  "!="          { \p s -> TNEqual p                 }
+  "/="          { \p s -> TNEqual p                 }
+  "("           { \p s -> TParenOpen p              }
+  ")"           { \p s -> TParenClose p             }
+  ","           { \p s -> TComma p                  }
+  "*"           { \p s -> TProduct p                }
+  ":="          { \p s -> TAssign p                 }
+  extension     { \p s -> TExtension p              }
+  extensions    { \p s -> TExtension p              }
+  exts          { \p s -> TExtension p              }
+  ext           { \p s -> TExtension p              }
+  e             { \p s -> TExtension p              }
+  languages     { \p s -> TLanguage p               }
+  language      { \p s -> TLanguage p               }
+  langs         { \p s -> TLanguage p               }
+  lang          { \p s -> TLanguage p               }
+  l             { \p s -> TLanguage p               }
+  projects      { \p s -> TProject p                }
+  project       { \p s -> TProject p                }
+  proj          { \p s -> TProject p                }
+  p             { \p s -> TProject p                }
+  filenames     { \p s -> TFilename p               }
+  filename      { \p s -> TFilename p               }
+  files         { \p s -> TFilename p               }
+  file          { \p s -> TFilename p               }
+  f             { \p s -> TFilename p               }
+  years         { \p s -> TYear p                   }
+  year          { \p s -> TYear p                   }
+  y             { \p s -> TYear p                   }
+  months        { \p s -> TMonth p                  }
+  month         { \p s -> TMonth p                  }
+  m             { \p s -> TMonth p                  }
+  days          { \p s -> TDay p                    }
+  day           { \p s -> TDay p                    }
+  da            { \p s -> TDay p                    }
+  dow           { \p s -> TDow p                    }
+  doy           { \p s -> TDoy p                    }
+  ascending     { \p s -> TAscending p              }
+  descending    { \p s -> TDescending p             }
+  asc           { \p s -> TAscending p              }
+  desc          { \p s -> TDescending p             }
+  limit         { \p s -> TLimit p                  }
+  group         { \p s -> TGroup p                  }
+  "&"           { \p s -> TGroup p                  }
+  nogrouping    { \p s -> TDontGroup p              }
+  nogroup       { \p s -> TDontGroup p              }
+  "!"           { \p s -> TDontGroup p              }
+  $digit+       { \p s -> TInteger p (read s)       }
+  $upper$ident* { \p s -> TIdent p s                }
+  \"$s*\"       { \p s -> TString p (init (tail s)) }
   
 {
 data ConstraintToken = TExtension AlexPosn
@@ -96,6 +99,8 @@ data ConstraintToken = TExtension AlexPosn
                      | TLE AlexPosn
                      | TGE AlexPosn
                      | TInteger AlexPosn Int
+                     | TIdent AlexPosn String
+                     | TAssign AlexPosn
                      | TString AlexPosn String
                      deriving (Eq, Show)
 

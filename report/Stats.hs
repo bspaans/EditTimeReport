@@ -149,15 +149,19 @@ groupEditTimes  = grouping editTime
 
 -- Stats — Trees
 --
-data StatsTree = Root [StatsTree] | Node Int String [StatsTree] | Leaf Time
+type Depth     = Int -- The depth of the tree
+type Children  = Int -- Total number of children in tree
+data StatsTree = Root Depth [StatsTree] 
+               | Node Children String [StatsTree] 
+               | Leaf Time
                     deriving (Eq, Show)
 
-type StatsTreeAlgebra r n = ([n] -> r 
+type StatsTreeAlgebra r n = (Int -> [n] -> r 
                           , Int -> String -> [n] -> n
                           , Time -> n)
 
 foldTree :: StatsTreeAlgebra r n -> StatsTree -> r
-foldTree (root, node, leaf) (Root tr) = root (map f tr)
+foldTree (root, node, leaf) (Root i tr) = root i (map f tr)
   where f (Node i s tr) = node i s (map f tr)
         f (Leaf e)      = leaf e
 

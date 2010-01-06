@@ -104,28 +104,33 @@ makeTree'     :: Stats -> Query -> Time -> [StatsTree]
 makeNode      :: String -> Stats -> Query -> StatsTree
 treeFromQuery :: String -> Stats -> E StatsTree
 
-makeTree [] s = Root []
-makeTree q  s = Root (pruneNodeTrees (makeTree' s q (0,0,0)))
+makeTree [] s = Root 0 []
+makeTree q  s = Root (length q + 1) (makeTree' s q (0,0,0))
 
 makeTree' s []            t = [Leaf t]
-makeTree' s ((v,c, g):cs) t = 
-    map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) 
+makeTree' s ((v,c, g):cs) t = pruneNodeTrees nodes
   where (yes, no) = c s
+        nodes = map (\gr -> makeNode (v . head $ gr) gr cs) (g yes)
 
+
+-- Pruning is pretty easy because we need to remove 
+-- the trees that don't have any leafs in them, 
+-- and we already keep that information in the Nodes.
+--
+pruneNodeTrees :: [StatsTree] -> [StatsTree]
+pruneNodeTrees = filter ((/=0) . f) 
+  where f (Node i _ _) = i
+        f _            = 1
 
 -- A Node is made of an Int describing the number of leafs,
 -- a string that is used for printing, and of course its children.
 --
 makeNode s yes cs = Node (n tr) s tr
-  where tr = pruneNodeTrees (makeTree' yes cs (sumTime yes))
+  where tr = makeTree' yes cs (sumTime yes)
         n [] = 0       -- Count children
         n ((Node i _ _):cs) = i + n cs
         n ((Leaf _):cs) = 1 + n cs
        
-pruneNodeTrees :: [StatsTree] -> [StatsTree]
-pruneNodeTrees = filter ((/=0) . f) 
-  where f (Node i _ _) = i
-        f _            = 1
 
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
@@ -175,9 +180,7 @@ addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function
 -- 
-fromQQuery qs = subs
-  where subs = map fromQSubQuery qs
---        ordering = fromQOrder subs order
+fromQQuery qs = map fromQSubQuery qs
 
 
 

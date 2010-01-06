@@ -24,6 +24,7 @@ import QueryAST
   ')'       { TParenClose p } 
   ','       { TComma p      } 
   '*'       { TProduct p    } 
+  ':='      { TAssign p     }
   extension { TExtension p  } 
   language  { TLanguage p   } 
   project   { TProject p    } 
@@ -40,16 +41,20 @@ import QueryAST
   desc      { TDescending p } 
   integer   { TInteger p $$ } 
   string    { TString p $$  }
+  ident     { TIdent p $$   }
 
 %%
 
 
-QUERY : SUBQUERIES  { $1 } 
-      |             { [] }
+COMMAND : QUERY       { Left $1  } 
+      | ASSIGNMENT    { Right $1 }
+      |               { Left []  }
 
 
-SUBQUERIES : SUBQUERY                 { [$1]        }
-           | SUBQUERIES '*' SUBQUERY  { $1 ++ [$3]  }
+ASSIGNMENT : ident ':=' QUERY { QAssign $1 $3 }
+
+QUERY : SUBQUERY            { [$1]        }
+      | QUERY '*' SUBQUERY  { $1 ++ [$3]  }
 
 SUBQUERY : GROUP INDEX CONSTRAINTS ORDER LIMIT {% if typeCheckConstraints $2 $3 
                                         then returnE $ QSubQuery $1 $2 $3 $4 $5
@@ -113,9 +118,12 @@ typeCheckQC a b c = if elem a [Year, Day, Doy]
                             QInt _ -> returnE $ QC a b c
                             QString s -> failE $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
                       else (returnE $ QC a b c)
+
+type ParseResult = E QCommand
+
 parseError   :: [ConstraintToken]  -> E a
-parseQuery   :: String   -> E QQuery
-parseFile    :: FilePath -> IO (E QQuery)
+parseQuery   :: String   -> ParseResult
+parseFile    :: FilePath -> IO ParseResult
 
 parseError s = failE $ "Parse error on " ++  if null s then "<eof>"
                        else showTokenPos (head s)

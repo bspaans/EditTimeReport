@@ -1,13 +1,16 @@
 module QueryAST ( QQuery, QConstraint(..), QSubQuery(..)
                 , QOper(..), QExpr(..), QOrder(..)
                 , QLimit(..), QIndex(..), E(..)
+                , QCommand, QAssign(..)
                 , returnE, thenE, failE, catchE
                 ) where
 
 
 -- A straight forward AST for the Query DSL
 --
+type QCommand    = Either QQuery QAssign
 type QQuery      = [QSubQuery]
+data QAssign     = QAssign String QQuery
 data QSubQuery   = QSubQuery Bool QIndex [QConstraint] QOrder QLimit
 data QIndex      = Ext | Lang | Proj | File | Year
                  | Month | Day | Dow | Doy deriving (Eq, Show)
