@@ -31,9 +31,11 @@ module Query ( makeTree, interactiveQueries ) where
  
  Grammar:
 
+   COMMAND     := QUERY | ASSIGNMENT
    QUERY       := ε | SUBQUERIES
    SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
-   SUBQUERY    := GROUPING INDEX CONSTRAINTS ORDER? LIMIT?
+   SUBQUERY    := GROUPING INDEX CONSTRAINTS ORDER? LIMIT? | IDENT
+   ASSIGNMENT  := IDENT := QUERY
    LIMIT       := limit DIGIT+
    ORDER       := ascending | descending | asc | desc
    GROUPING    := group | & | nogroup | !
@@ -43,6 +45,7 @@ module Query ( makeTree, interactiveQueries ) where
    CONSTRAINT  := INDEX OPERATOR EXPR | OPERATOR EXPR | EXPR
    OPERATOR    := == | = | <= | < | > | >= | != | /=
    EXPR        := DIGIT+ | STRING
+   IDENT       := [A-Z]+[a-zA-Z0-9]*
 
 
    tokens  := extension, language, project, filename, year, month, day, dow, doy
