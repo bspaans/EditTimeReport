@@ -58,7 +58,7 @@ import QueryAST
 import Char
 import Data.List
 import Data.Function
-import quantified Data.Map as D
+import qualified Data.Map as D
 import Maybe
 import Control.Applicative
 import System.Console.Editline.Readline
@@ -69,6 +69,7 @@ import System.Console.Editline.Readline
 -- generated tree.
 --
 type Queries    = [Query]
+type Env        = D.Map String Query
 type Query      = [SubQuery]
 type SubQuery   = (View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
@@ -90,7 +91,8 @@ makeConstraint p = con ([], [])
 
 -- Executing Queries
 --
---executeQueries :: Queries -> [StatsTree]
+-- fromQCommands :: QCommands -> Env -> Stats -> ([StatsTree], Env)
+-- fromQCommand :: QCommand -> Env -> Stats -> Either [StatsTree] Env
 
 
 -- Executing a Query 
@@ -103,7 +105,7 @@ makeConstraint p = con ([], [])
 makeTree      :: Query -> Stats -> StatsTree
 makeTree'     :: Stats -> Query -> Time -> [StatsTree]
 makeNode      :: String -> Stats -> Query -> StatsTree
-treeFromQuery :: String -> Stats -> E StatsTree
+treeFromQuery :: String -> Env -> Stats -> E (Either StatsTree Env)
 
 makeTree [] s = Root 0 []
 makeTree q  s = Root (length q + 1) (makeTree' s q (0,0,0))
@@ -136,7 +138,10 @@ makeNode s yes cs = Node (n tr) s tr
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
 --
-treeFromQuery s st = flip makeTree st . fromQCommand <$>  parseQuery s
+treeFromQuery s env st = parsed
+  where parsed         = f . fromQCommand env <$> parseQuery s
+        f (Left s)     = Left $ flip makeTree st s
+        f (Right e)    = Right e
 
 
 
@@ -147,18 +152,20 @@ interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive 
                                                , "Copyright 2009-2010, Bart Spaans"
                                                , "Type \"help\" for more information"])
                               setCompletionEntryFunction (Just qCompleter)
-                              interactiveQ'
-  where interactiveQ' = do
+                              interactiveQ' (D.fromList [])
+  where interactiveQ' env = do
          maybeLine <- readline "> " 
          case maybeLine of
            Nothing     -> do putStr "\n" ; return ()
-           Just ""     -> interactiveQ'
+           Just ""     -> interactiveQ' env
            Just "exit" -> do putStr "\n" ; return ()
            Just s -> do addHistory s
-                        case treeFromQuery s stats of
-                           Ok a     -> putStrLn $ treeToString a
+                        case treeFromQuery s env stats of
+                           Ok a     -> case a of 
+                                         Left t  -> putStrLn $ treeToString t
+                                         Right e -> putStrLn "Definition added" >> interactiveQ' e
                            Failed e -> putStrLn e
-                        interactiveQ' 
+                        interactiveQ' env
 
 qCompleter :: String -> IO [String]
 qCompleter s = return (filter (startsWith s) known)
@@ -172,12 +179,16 @@ qCompleter s = return (filter (startsWith s) known)
 -- SubQueries (ie. a view function, a constraint and a 
 -- group function)
 --
-fromQCommand     :: QCommand -> (Query, D.Map String Query)
+fromQCommand     :: Env -> QCommand -> Either Query Env
 fromQQuery       :: QQuery -> Query
 fromQSubQuery    :: QSubQuery -> SubQuery
 fromQIndex       :: QIndex -> (EditStats -> String)
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 
+
+fromQCommand _   (Left q)    = Left $ fromQQuery q
+fromQCommand env (Right a) = Right $ i a
+  where i (QAssign s q) = D.insert s (fromQQuery q) env
 
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function

@@ -8,9 +8,10 @@ module QueryAST ( QQuery, QConstraint(..), QSubQuery(..)
 
 -- A straight forward AST for the Query DSL
 --
-type QCommand    = Either QQuery QAssign
+type QCommand    = Either QQuery QAssign 
 type QQuery      = [QSubQuery]
 data QAssign     = QAssign String QQuery
+data QCall       = QCall String
 data QSubQuery   = QSubQuery Bool QIndex [QConstraint] QOrder QLimit
 data QIndex      = Ext | Lang | Proj | File | Year
                  | Month | Day | Dow | Doy deriving (Eq, Show)
