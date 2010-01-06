@@ -104,27 +104,28 @@ makeTree'     :: Stats -> Query -> Time -> [StatsTree]
 makeNode      :: String -> Stats -> Query -> StatsTree
 treeFromQuery :: String -> Stats -> E StatsTree
 
-makeTree q s  = Root (makeTree' s q (0,0,0))
+makeTree [] s = Root []
+makeTree q  s = Root (pruneNodeTrees (makeTree' s q (0,0,0)))
 
 makeTree' s []            t = [Leaf t]
 makeTree' s ((v,c, g):cs) t = 
-  -- if nomatch gets (optionally) removed here, a pruneTree 
-  -- function is needed in makeTree to remove dead paths
-  if null yes then nomatch
-    else map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) ++ nomatch 
+    map (\gr -> makeNode (v . head $ gr) gr cs) (g yes) 
   where (yes, no) = c s
-        nomatch   = if null no then [] else [makeNode "No match" no cs]
 
 
 -- A Node is made of an Int describing the number of leafs,
 -- a string that is used for printing, and of course its children.
 --
 makeNode s yes cs = Node (n tr) s tr
-  where tr = makeTree' yes cs (sumTime yes)
+  where tr = pruneNodeTrees (makeTree' yes cs (sumTime yes))
         n [] = 0       -- Count children
         n ((Node i _ _):cs) = i + n cs
         n ((Leaf _):cs) = 1 + n cs
- 
+       
+pruneNodeTrees :: [StatsTree] -> [StatsTree]
+pruneNodeTrees = filter ((/=0) . f) 
+  where f (Node i _ _) = i
+        f _            = 1
 
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
@@ -179,18 +180,6 @@ fromQQuery qs = subs
 --        ordering = fromQOrder subs order
 
 
--- Ordering is done before passing the grouped Stats
--- on to the constraint function
---
-fromQOrder :: QOrder -> [Stats] -> [Stats]
-fromQOrder NoOrder = id
-fromQOrder Asc     = sortBy (compare `on` sumTime)
-fromQOrder Desc    = sortBy (flip compare `on` sumTime)
-
-
-fromQLimit :: QLimit -> [Stats] -> [Stats]
-fromQLimit NoLimit   = id
-fromQLimit (Limit i) = take i 
 
 
 -- Sub queries
@@ -205,8 +194,24 @@ fromQSubQuery q@(QSubQuery _ Day   _ _ _) = makeQuery q (day . edit)
 fromQSubQuery q@(QSubQuery _ Dow   _ _ _) = makeQuery q (dow . edit)
 fromQSubQuery q@(QSubQuery _ Doy   _ _ _) = makeQuery q (doy . edit)
 
-makeQuery (QSubQuery gr t c o l) f  = (fromQIndex t, fromQConstraints t c, fromQLimit l . fromQOrder o . addGrouping gr f)
+makeQuery (QSubQuery gr t c o l) f  = (view, constraints, grouping)
+   where view = fromQIndex t
+         constraints = fromQConstraints t c
+         grouping = fromQLimit l . fromQOrder o . addGrouping gr f
 
+
+-- Limiting and ordering is done before passing 
+-- the grouped Stats on to the constraint function
+--
+fromQOrder :: QOrder -> [Stats] -> [Stats]
+fromQOrder NoOrder = id
+fromQOrder Asc     = sortBy (compare `on` sumTime)
+fromQOrder Desc    = sortBy (flip compare `on` sumTime)
+
+
+fromQLimit :: QLimit -> [Stats] -> [Stats]
+fromQLimit NoLimit   = id
+fromQLimit (Limit i) = take i 
 
 
 -- The view function
