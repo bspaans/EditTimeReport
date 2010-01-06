@@ -58,6 +58,7 @@ import QueryAST
 import Char
 import Data.List
 import Data.Function
+import quantified Data.Map as D
 import Maybe
 import Control.Applicative
 import System.Console.Editline.Readline
@@ -135,7 +136,7 @@ makeNode s yes cs = Node (n tr) s tr
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
 --
-treeFromQuery s st = flip makeTree st . fromQQuery <$>  parseQuery s
+treeFromQuery s st = flip makeTree st . fromQCommand <$>  parseQuery s
 
 
 
@@ -171,6 +172,7 @@ qCompleter s = return (filter (startsWith s) known)
 -- SubQueries (ie. a view function, a constraint and a 
 -- group function)
 --
+fromQCommand     :: QCommand -> (Query, D.Map String Query)
 fromQQuery       :: QQuery -> Query
 fromQSubQuery    :: QSubQuery -> SubQuery
 fromQIndex       :: QIndex -> (EditStats -> String)
