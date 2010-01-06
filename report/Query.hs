@@ -154,11 +154,11 @@ interactiveQueries :: Stats -> IO()
 interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive session"
                                                , "Copyright 2009-2010, Bart Spaans"
                                                , "Type \"help\" for more information"])
-                              setCompletionEntryFunction (Just qCompleter)
                               loc <- historyLocation
                               readHistory loc
                               interactiveQ' (D.fromList [])
   where interactiveQ' env = do
+         setCompletionEntryFunction (Just $ qCompleter env)
          maybeLine <- readline "> " 
          case maybeLine of
            Nothing     -> do putStr "\n" ; onExit ; return ()
@@ -178,11 +178,11 @@ onExit = do loc <- historyLocation
 historyLocation :: IO FilePath
 historyLocation = (</> ".report_history") <$> getUserDocumentsDirectory
 
-qCompleter :: String -> IO [String]
-qCompleter s = return (filter (startsWith s) known)
+qCompleter :: Env -> String -> IO [String]
+qCompleter env s = return (filter (startsWith s) known)
   where known = ["extension", "language", "project", "filename"
                , "year", "month", "day", "dow", "doy", "limit"
-               , "asc", "desc"]
+               , "asc", "desc"] ++ D.keys env
 
 
 -- Convert AST to Query
