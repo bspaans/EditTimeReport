@@ -14,18 +14,19 @@ import System.IO
 import Control.Monad
 import Control.Arrow
 import System.FilePath
+import System.Directory
 import Data.Maybe
 
 
 data Options = Options {
                          interactive :: Bool
                        , askOptions  :: Bool
-                       , ext         :: Extensions          -- <not doing anything yet>
-                       , output      :: [String]
+                       , ext         :: Extensions          
+                       , output      :: [String]           -- not doing anything yet
                        , lang        :: [(String, String)]
                        , proj        :: [(String, String)]
-                       , home        :: Maybe String        -- </not doing anything yet>
-                       } deriving (Eq, Show)
+                       , home        :: Maybe (IO String)  
+                       } 
 
 defaultOptions :: Options
 defaultOptions = Options { 
@@ -33,7 +34,7 @@ defaultOptions = Options {
                          , ext = extensionDict
                          , lang = []
                          , proj = []
-                         , home = Nothing 
+                         , home = Just (getHomeDirectory)
                          , askOptions = False
                          , output = []}
 
@@ -51,7 +52,7 @@ options = [
 
 setAskOptions opt    = return opt { askOptions = True }
 outputHelp _         = putStrLn (usageInfo usage options) >> exitWith ExitSuccess
-setHome h opt        = return opt { home = Just h }
+setHome h opt        = return opt { home = Just (return h) }
 setInteractive opt   = return opt { interactive = True, askOptions = True }
 setLanguage path opt = return opt { lang = parseDescription path : (lang opt) } 
 setProject  path opt = return opt { proj = parseDescription path : (proj opt) } 
@@ -74,11 +75,13 @@ parseDescription s = case getDesc of
 toMatches :: [(String, String)] -> Matches
 toMatches = map (first $ splitPath . addTrailingPathSeparator)
 
-makeStatOptions :: Options -> StatOptions
-makeStatOptions opts = SO { extensions = ext opts 
-                          , languages  = toMatches $ lang opts
-                          , projects   = toMatches $ proj opts
-                          , homePath   = fromMaybe "none" $ home opts }
+makeStatOptions :: Options -> IO StatOptions
+makeStatOptions opts = do h <- fromMaybe (return "none") $ home opts
+                          return SO { extensions = ext opts 
+                                    , languages  = toMatches $ lang opts
+                                    , projects   = toMatches $ proj opts
+                                    , homePath   =  h }
+
 
 main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           args <- getArgs
@@ -89,7 +92,7 @@ main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           po <- return defaultPO
           if null nonOpts
             then putStrLn usage
-            else do so <- if askOptions opts then askStatOptions else return so
+            else do so <- if askOptions opts then askStatOptions else so
                     s  <- statsFromFile (head nonOpts) so 
                     interactiveQueries s
 
