@@ -1,18 +1,19 @@
-module Printers ( Printer(..)
-                , PrintOptions(..), POption (..)
+module Printers ( PrintOptions(..), POption (..)
                 , isSet, defaultPO
                 , touched
                 , months, headers     -- String data
                 , getMonth, getDow 
                 , showTimeE, showTime -- Time strings
                 , brackets, braced, showSub, showLanguage, showProject
-                , showExtension, treeToString
+                , showExtension, treeToString, treeToHtml, treeToCSV
                 ) where
 
 import Stats
+import Text.XHtml hiding (header)
 import Text.Printf
+import Text.CSV
 import Data.Monoid
-import Control.Arrow
+import Control.Arrow hiding ((+++))
 
 
 data PrintOptions = PO [ POption ]
@@ -29,10 +30,6 @@ isSet op (PO opts) = elem op opts
 
 defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }" -- Should actually be a file though
             ]
-
-
-class Printer a where 
-  printReport :: PrintOptions -> CalendarS -> a 
 
 
 touched = map (file . edit)
@@ -80,6 +77,9 @@ showProject   n = maybe n showSub
 showExtension n = maybe n brackets
 
 
+
+-- StatsTree to Plain Text
+--
 treeToString :: StatsTree -> String
 treeToString (Root [] _ _) = "No matches"
 treeToString (Root ns _ t) = concatMap (tts' 1) ns ++ "\n"
@@ -88,3 +88,25 @@ treeToString (Root ns _ t) = concatMap (tts' 1) ns ++ "\n"
                               ++ printf "%-70s" s 
                               ++ concatMap (tts' (lvl + 1)) tr
 
+
+
+-- StatsTree to Html table
+--
+treeToHtml :: StatsTree -> String
+treeToHtml = prettyHtml . foldTree (root, node, leaf)
+  where root ns h t = table (tr (concatHtml (map (th . toHtml) h)) +++ (concatHtml . map tr $ ns))
+        node cspan s ns = (td (toHtml s) ! [colspan cspan]) +++ table (concatHtml (map tr ns))
+        leaf = td . toHtml . showTime
+
+
+
+-- StatsTree to CSV 
+--
+treeToCSV :: StatsTree -> String
+treeToCSV = printCSV . foldTree (root, node, leaf)
+  where root :: [[[String]]] -> [String] -> String -> [[String]]
+        root ns h t = h : concat ns
+        node :: Int -> String -> [[[String]]] -> [[String]]
+        node _ s ns = concatMap (map (s :)) ns
+        leaf :: Time -> [[String]]
+        leaf t = [[showTime t]]

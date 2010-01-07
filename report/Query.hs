@@ -169,7 +169,7 @@ interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive 
            Just "exit" -> do putStr "\n" ; onExit ; return ()
            Just s -> do addHistory s
                         case treeFromQuery s env stats of
-                           Ok (st, e) -> mapM_ (putStrLn . treeToString) st >> interactiveQ' e
+                           Ok (st, e) -> mapM_ (putStrLn . treeToCSV) st >> interactiveQ' e
                            Failed e -> putStrLn e >> interactiveQ' env
 
 onExit = do loc <- historyLocation
