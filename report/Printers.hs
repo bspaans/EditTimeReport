@@ -64,8 +64,9 @@ setPrinters p = S.fromList <$> f p
   where f = mapM (fmap PrinterF . parsePrinter . map toUpper) 
 
 
-printTree :: PrintOptions -> StatsTree -> String
-printTree po st = if null p then "No printers selected." else concatMap ($st) p
+printTree :: PrintOptions -> [StatsTree] -> String
+printTree po st = if null p then "No printers selected." 
+                            else p >>= (\p' -> concatMap (p'$) (reverse st))
   where p = getPrinters po
 
 

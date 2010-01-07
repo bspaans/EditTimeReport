@@ -1,5 +1,8 @@
 module Query ( makeTree, interactiveQueries, E(..)
-             , emptyEnv, execute, module Printers ) where
+             , emptyEnv, execute, execute' 
+             , commandsFromFile, commandsFromFiles
+             , module Printers 
+             ) where
 
 {-
  
@@ -66,6 +69,7 @@ import qualified Data.Map as D
 import Maybe
 import Control.Applicative
 import System.Console.Editline.Readline
+import System.IO
 import System.Directory
 import System.FilePath
 import Text.Printf
@@ -87,16 +91,26 @@ type View       = EditStats -> String
 type Group      = Stats -> [Stats]
 
 
+commandsFromFiles :: Env -> [FilePath] -> IO (E Commands)
+commandsFromFiles env []     = return $ Ok ([], env)
+commandsFromFiles env (f:fp) = do o <- commandsFromFile env f
+                                  case o of 
+                                    Ok (q,e) -> do o2 <- commandsFromFiles e fp 
+                                                   case o2 of 
+                                                     Ok (q2,e) -> return (Ok (q ++ q2, e))
+                                                     Failed s -> return (Failed s)
+                                    Failed s -> return (Failed s)
+
 commandsFromFile :: Env -> FilePath -> IO (E Commands)
 commandsFromFile env = fmap (>>= fromQCommands env) . parseFile
 
-execute :: Env -> PrintOptions -> [String] -> Stats -> String
+execute :: Env -> PrintOptions -> E Commands -> Stats -> String
 execute env po q st = case tr of 
-                        Ok a -> concatMap (printTree po) a 
+                        Ok c -> printTree po c
                         Failed f -> error f 
-  where tr = fst . executeCommands st <$> qc
-        qc = concat <$> mapM parseCommands q >>= fromQCommands env
+  where tr = fst . executeCommands st <$> q
  
+execute' env po q st = execute env po (mapM parseCommands q >>= fromQCommands env . concat) st
 
 emptyEnv :: Env
 emptyEnv = D.fromList []
@@ -208,13 +222,13 @@ repl stats env po = do
 eval stats env po s = do 
   addHistory s
   case treeFromQuery s env stats of
-    Ok (st, e) -> mapM_ (putStrLn . printTree po) st >> repl stats e po
+    Ok (st, e) -> (putStrLn $ printTree po st) >> repl stats e po
     Failed e -> putStrLn e >> repl stats env po
-
 
 promptStart = do putStrLn (unlines ["Time Report 1.0a, interactive session"
                                    , "Copyright 2009-2010, Bart Spaans"
                                    , "Type \"help\" for more information"])
+                 hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
                  historyLocation >>= readHistory
 
 onExit = putStr "\n" >> historyLocation >>= writeHistory >> return ()

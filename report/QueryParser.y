@@ -49,10 +49,10 @@ import QueryAST
 
 
 COMMANDS : MULTICOMMAND         { $1 }
-         | MULTICOMMAND COMMAND { [$2] ++ $1 }
+         | MULTICOMMAND COMMAND { $1 ++ [$2] }
          | COMMAND              { [$1] }
 
-MULTICOMMAND: MULTICOMMAND SINGLECOMMAND  { [$2] ++ $1 } 
+MULTICOMMAND: MULTICOMMAND SINGLECOMMAND  { $1 ++ [$2] } 
             | SINGLECOMMAND               { [$1]       }
 
 SINGLECOMMAND : COMMAND ';' { $1 }
