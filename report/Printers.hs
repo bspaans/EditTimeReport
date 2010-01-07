@@ -7,10 +7,9 @@ module Printers ( Printer(..)
                 , showTimeE, showTime -- Time strings
                 , brackets, braced, showSub, showLanguage, showProject
                 , showExtension, treeToString
-                , module Report
                 ) where
 
-import Report
+import Stats
 import Text.Printf
 import Data.Monoid
 import Control.Arrow
