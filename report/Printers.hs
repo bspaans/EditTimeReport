@@ -19,17 +19,6 @@ import Control.Arrow
 data PrintOptions = PO [ POption ]
 data POption      = StyleSheet String
                   | GenerateHeader
-                  | PrintSIndexed
-                  | PrintExtensionTable
-                  | PrintLanguageTable
-                  | PrintProjectTable
-                  | PrintFilenameTable
-                  | PrintYearTable
-                  | PrintMonthTable
-                  | PrintDayTable
-                  | PrintDayofWeekTable
-                  | SortedAsc
-                  | SortedDesc
                   deriving (Eq, Show)
 
 instance Monoid PrintOptions where
@@ -40,15 +29,7 @@ instance Monoid PrintOptions where
 isSet op (PO opts) = elem op opts
 
 defaultPO = PO [StyleSheet "td { border: 1px solid #eee; }" -- Should actually be a file though
-              , PrintSIndexed, PrintExtensionTable
-              , PrintLanguageTable, PrintProjectTable 
-              , PrintFilenameTable, PrintMonthTable, PrintDayofWeekTable]
-
-printAllPO = PO [ PrintSIndexed, PrintExtensionTable
-              , PrintLanguageTable, PrintProjectTable 
-              , PrintFilenameTable, PrintYearTable
-              , PrintMonthTable, PrintDayTable 
-              , PrintDayofWeekTable]
+            ]
 
 
 class Printer a where 
@@ -87,8 +68,6 @@ brackets = enclose "[" "]"
 braced   = enclose "{" "}" 
 
 
-
-
 showSub :: (Description, String) -> String
 showSub (r, s) = braced $ r ++ ":" ++ s
 
@@ -100,21 +79,6 @@ showExtension' n = showExtension n . extInformation
 showLanguage  n = maybe n showSub 
 showProject   n = maybe n showSub 
 showExtension n = maybe n brackets
-
-
--- TimeTable a to TimeTable String
---
-tableS f t = map (first (f)) . t
-tableExtensionsS = tableS (showExtension "NONE") tableExtensions
-tableLanguagesS  = tableS (showLanguage "NONE") tableLanguages
-tableProjectsS   = tableS (showProject "NONE") tableProjects
-tableFilenamesS  = tableFilenames
-tableYearS       = tableS show tableYear
-tableMonthS      = tableS show tableMonth
-tableDayS        = tableS show tableDay
-tableDayofWeekS  = tableS show tableDayofWeek
-
-
 
 
 treeToString :: StatsTree -> String

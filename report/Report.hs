@@ -8,11 +8,6 @@ module Report (
        , IndexedAlgebra, SIndexedAlgebra           -- Algebras
        , foldIR, report                            -- Fold and applied fold
        , indexAlgebra, indexFromFile               -- Indexed reports algebra
-       , Table, TimeTable                          -- Tables
-       , tableExtensions, tableLanguages           -- Tables
-       , tableProjects, tableFilenames             -- Tables
-       , tableYear, tableMonth                     -- Tables
-       , tableDay, tableDayofWeek                  -- Tables
        , module Stats
        ) where
 
@@ -106,31 +101,4 @@ indexAlgebra   = (IR, y, mon, days)
 
 indexFromFile f so  = report <$> fromFile f so 
 
-
--- Tables
--- Generates time tables from the groupings.
---
-type Table a b = [(a, b)]
-type TimeTable a = Table a Time
-
-table           :: Ord a => (EditStats -> a) -> Report (TimeTable a)
-tableExtensions :: Report (TimeTable (Maybe Description))
-tableLanguages  :: Report (TimeTable (Maybe (Description, String)))
-tableProjects   :: Report (TimeTable (Maybe (Description, String)))
-tableFilenames  :: Report (TimeTable FilePath)
-tableYear       :: Report (TimeTable Int)
-tableMonth      :: Report (TimeTable Int)
-tableDay        :: Report (TimeTable Int)
-tableDayofWeek  :: Report (TimeTable Int)
-
-
-table f         = map (f . head &&& sumTime) . grouping f 
-tableExtensions = table extInformation
-tableLanguages  = table language
-tableProjects   = table project
-tableFilenames  = table fileName
-tableYear       = table (year . edit)
-tableMonth      = table (month . edit)
-tableDay        = table (day . edit)
-tableDayofWeek  = table (dow . edit)
 
