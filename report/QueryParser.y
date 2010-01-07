@@ -65,7 +65,7 @@ COMMAND : QUERY       { Left $1  }
 ASSIGNMENT : ident ':=' QUERY { QAssign $1 $3 }
 
 QUERY : SUBQUERY            { [$1]        }
-      | QUERY '*' SUBQUERY  { [$3] ++ $1  }
+      | QUERY '*' SUBQUERY  { $1 ++ [$3]  }
 
 SUBQUERY : GROUP INDEX CONSTRAINTS ORDER LIMIT {% if typeCheckConstraints $2 $3 
                                         then returnE $ QSubQuery $1 $2 $3 $4 $5

@@ -118,8 +118,8 @@ tableDayofWeekS  = tableS show tableDayofWeek
 
 
 treeToString :: StatsTree -> String
-treeToString (Root i []) = "No matches"
-treeToString (Root i ns) = concatMap (tts' 1) ns ++ "\n"
+treeToString (Root [] _) = "No matches"
+treeToString (Root ns _) = concatMap (tts' 1) ns ++ "\n"
   where tts' lvl (Leaf time) = showTime time
         tts' lvl (Node _ s tr) = '\n' : replicate (lvl * 4) ' ' 
                               ++ printf "%-70s" s 

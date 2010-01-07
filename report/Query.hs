@@ -79,7 +79,7 @@ type ExecResult = ([StatsTree], Env)
 type Queries    = [Query]
 type Env        = D.Map String Query
 type Query      = [SubQuery]
-type SubQuery   = (View, Constraint, Group)
+type SubQuery   = (Header, View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
 type View       = EditStats -> String
 type Group      = Stats -> [Stats]
@@ -113,11 +113,11 @@ treeFromQuery   :: String -> Env -> Stats -> E ExecResult
 
 executeCommands st (q, env) = (map (flip makeTree st) q, env)
 
-makeTree [] s = Root 0 []
-makeTree q  s = Root (length q + 1) (makeTree' s q (0,0,0))
+makeTree [] s = Root [] []
+makeTree q  s = Root (makeTree' s q (0,0,0)) (map (\(h,_,_,_) -> h) q)
 
 makeTree' s []            t = [Leaf t]
-makeTree' s ((v,c, g):cs) t = pruneNodeTrees nodes
+makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
   where (yes, no) = c s
         nodes = map (\gr -> makeNode (v . head $ gr) gr cs) (g yes)
 
@@ -183,9 +183,9 @@ qCompleter env s = return (filter (startsWith s) known)
 
 
 -- Convert AST to Query
--- We have to transform the parsing result (QQuery) into 
+-- We have to transform the parsing result (QCommands) into 
 -- SubQueries (ie. a view function, a constraint and a 
--- group function)
+-- group function) and an Environment.
 --
 fromQCommands    :: Env -> QCommands -> E Commands
 fromQCommand     :: Env -> QCommand -> E (Either Query Env)
@@ -231,7 +231,7 @@ fromQSubQuery env (QCall s)                 = case D.lookup s env of
                                                 Just q -> Ok q
                                                 Nothing -> Failed $ "Unknown definition `" ++ s ++ "'"
 
-makeQuery (QSubQuery gr t c o l) f  = Ok [(view, constraints, grouping)]
+makeQuery (QSubQuery gr t c o l) f  = Ok [("test", view, constraints, grouping)]
    where view = fromQIndex t
          constraints = fromQConstraints t c
          grouping = fromQLimit l . fromQOrder o . addGrouping gr f

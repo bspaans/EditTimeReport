@@ -7,8 +7,8 @@ module Stats ( EditStats(extInformation, language        -- EditStats
              , CalendarS, CalendarSAlgebra, calendarS    -- CalendarS + algebra
              , grouping, groupExtensions, groupLanguages -- Groupings
              , groupProjects, groupFilenames             -- Groupings
-             , StatsTree(..), StatsTreeAlgebra, foldTree     -- Tree
-             , fromFile, statsFromFile                       -- Stats from file
+             , StatsTree(..), StatsTreeAlgebra, foldTree -- Tree
+             , fromFile, statsFromFile, Header           -- Stats from file
              , module Calendar , module StatOptions
              ) where 
 
@@ -149,19 +149,19 @@ groupEditTimes  = grouping editTime
 
 -- Stats — Trees
 --
-type Depth     = Int -- The depth of the tree
 type Children  = Int -- Total number of children in tree
-data StatsTree = Root Depth [StatsTree] 
+type Header    = String
+data StatsTree = Root [StatsTree] [Header]
                | Node Children String [StatsTree] 
                | Leaf Time
                     deriving (Eq, Show)
 
-type StatsTreeAlgebra r n = (Int -> [n] -> r 
+type StatsTreeAlgebra r n = ([n] -> [Header] -> r 
                           , Int -> String -> [n] -> n
                           , Time -> n)
 
 foldTree :: StatsTreeAlgebra r n -> StatsTree -> r
-foldTree (root, node, leaf) (Root i tr) = root i (map f tr)
+foldTree (root, node, leaf) (Root tr h) = root (map f tr) h
   where f (Node i s tr) = node i s (map f tr)
         f (Leaf e)      = leaf e
 
