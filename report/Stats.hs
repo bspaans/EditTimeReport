@@ -151,17 +151,18 @@ groupEditTimes  = grouping editTime
 --
 type Children  = Int -- Total number of children in tree
 type Header    = String
-data StatsTree = Root [StatsTree] [Header]
+type Title     = String
+data StatsTree = Root [StatsTree] [Header] String
                | Node Children String [StatsTree] 
                | Leaf Time
                     deriving (Eq, Show)
 
-type StatsTreeAlgebra r n = ([n] -> [Header] -> r 
+type StatsTreeAlgebra r n = ([n] -> [Header] -> String -> r 
                           , Int -> String -> [n] -> n
                           , Time -> n)
 
 foldTree :: StatsTreeAlgebra r n -> StatsTree -> r
-foldTree (root, node, leaf) (Root tr h) = root (map f tr) h
+foldTree (root, node, leaf) (Root tr h s) = root (map f tr) h s
   where f (Node i s tr) = node i s (map f tr)
         f (Leaf e)      = leaf e
 

@@ -113,8 +113,11 @@ treeFromQuery   :: String -> Env -> Stats -> E ExecResult
 
 executeCommands st (q, env) = (map (flip makeTree st) q, env)
 
-makeTree [] s = Root [] []
-makeTree q  s = Root (makeTree' s q (0,0,0)) (map (\(h,_,_,_) -> h) q)
+makeTree [] s = Root [] [] ""
+makeTree q  s = Root nodes headers title
+  where nodes = makeTree' s q (0,0,0)
+        headers = map (\(h,_,_,_) -> h) q ++ ["Edit Time"]
+        title = concat . intersperse " / " $ reverse headers
 
 makeTree' s []            t = [Leaf t]
 makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
@@ -218,24 +221,35 @@ fromQQuery env (c:cs) = fromQSubQuery env c `thenE` (\a -> (a++) <$> (fromQQuery
 
 -- Sub queries
 --
-fromQSubQuery _ q@(QSubQuery _ Ext   _ _ _) = makeQuery q extInformation
-fromQSubQuery _ q@(QSubQuery _ Lang  _ _ _) = makeQuery q language
-fromQSubQuery _ q@(QSubQuery _ Proj  _ _ _) = makeQuery q project
-fromQSubQuery _ q@(QSubQuery _ File  _ _ _) = makeQuery q fileName
-fromQSubQuery _ q@(QSubQuery _ Year  _ _ _) = makeQuery q (year . edit)
-fromQSubQuery _ q@(QSubQuery _ Month _ _ _) = makeQuery q (month . edit)
-fromQSubQuery _ q@(QSubQuery _ Day   _ _ _) = makeQuery q (day . edit)
-fromQSubQuery _ q@(QSubQuery _ Dow   _ _ _) = makeQuery q (dow . edit)
-fromQSubQuery _ q@(QSubQuery _ Doy   _ _ _) = makeQuery q (doy . edit)
+fromQSubQuery _ q@(QSubQuery _ Ext   _ _ _ _) = makeQuery q extInformation
+fromQSubQuery _ q@(QSubQuery _ Lang  _ _ _ _) = makeQuery q language
+fromQSubQuery _ q@(QSubQuery _ Proj  _ _ _ _) = makeQuery q project
+fromQSubQuery _ q@(QSubQuery _ File  _ _ _ _) = makeQuery q fileName
+fromQSubQuery _ q@(QSubQuery _ Year  _ _ _ _) = makeQuery q (year . edit)
+fromQSubQuery _ q@(QSubQuery _ Month _ _ _ _) = makeQuery q (month . edit)
+fromQSubQuery _ q@(QSubQuery _ Day   _ _ _ _) = makeQuery q (day . edit)
+fromQSubQuery _ q@(QSubQuery _ Dow   _ _ _ _) = makeQuery q (dow . edit)
+fromQSubQuery _ q@(QSubQuery _ Doy   _ _ _ _) = makeQuery q (doy . edit)
 fromQSubQuery env (QCall s)                 = case D.lookup s env of 
                                                 Just q -> Ok q
                                                 Nothing -> Failed $ "Unknown definition `" ++ s ++ "'"
 
-makeQuery (QSubQuery gr t c o l) f  = Ok [("test", view, constraints, grouping)]
+makeQuery (QSubQuery gr t c h o l) f  = Ok [(fromQAs h t, view, constraints, grouping)]
    where view = fromQIndex t
          constraints = fromQConstraints t c
          grouping = fromQLimit l . fromQOrder o . addGrouping gr f
 
+
+fromQAs (As s) _     = s
+fromQAs _      Ext   = "Extension"
+fromQAs _      Lang  = "Language"
+fromQAs _      Proj  = "Project"
+fromQAs _      File  = "File Name"
+fromQAs _      Year  = "Year"
+fromQAs _      Month = "Month"
+fromQAs _      Day   = "Day of the Month"
+fromQAs _      Dow   = "Day of the Week"
+fromQAs _      Doy   = "Day of the Year"
 
 -- Limiting and ordering is done before passing 
 -- the grouped Stats on to the constraint function

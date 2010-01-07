@@ -63,6 +63,7 @@ tokens :-
   ascending     { \p s -> TAscending p              }
   descending    { \p s -> TDescending p             }
   asc           { \p s -> TAscending p              }
+  as            { \p s -> TAs p                     }
   desc          { \p s -> TDescending p             }
   limit         { \p s -> TLimit p                  }
   group         { \p s -> TGroup p                  }
@@ -100,6 +101,7 @@ data ConstraintToken = TExtension AlexPosn
                      | TLE AlexPosn
                      | TGE AlexPosn
                      | TSemiColon AlexPosn
+                     | TAs AlexPosn
                      | TInteger AlexPosn Int
                      | TIdent AlexPosn String
                      | TAssign AlexPosn
@@ -153,4 +155,5 @@ showTokenPos (TString p _)   = showPos p
 showTokenPos (TAssign p)     = showPos p
 showTokenPos (TIdent p _)    = showPos p
 showTokenPos (TSemiColon p)  = showPos p
+showTokenPos (TAs p)         = showPos p
 }

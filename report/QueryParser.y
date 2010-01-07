@@ -26,6 +26,7 @@ import QueryAST
   '*'       { TProduct p    } 
   ':='      { TAssign p     }
   ';'       { TSemiColon p  }
+  as        { TAs p         }
   extension { TExtension p  } 
   language  { TLanguage p   } 
   project   { TProject p    } 
@@ -67,8 +68,8 @@ ASSIGNMENT : ident ':=' QUERY { QAssign $1 $3 }
 QUERY : SUBQUERY            { [$1]        }
       | QUERY '*' SUBQUERY  { $1 ++ [$3]  }
 
-SUBQUERY : GROUP INDEX CONSTRAINTS ORDER LIMIT {% if typeCheckConstraints $2 $3 
-                                        then returnE $ QSubQuery $1 $2 $3 $4 $5
+SUBQUERY : GROUP INDEX CONSTRAINTS AS ORDER LIMIT {% if typeCheckConstraints $2 $3 
+                                        then returnE $ QSubQuery $1 $2 $3 $4 $5 $6
                                         else failE "Parse error in constraints: expecting an integer"}
          | ident                               { QCall $1 }
 
@@ -96,6 +97,9 @@ CONS : CONSTRAINT                       { [$1]       }
 CONSTRAINT : INDEX OPERATOR EXPR        {% typeCheckQC $1 $2 $3 }
            | OPERATOR EXPR              { QCOE $1 $2 }
            | EXPR                       { QCE $1 } 
+
+AS : as string { As $2 }
+   |           { DefaultAs }
 
 OPERATOR : '<'           { QL  }
          | '>'           { QG  }
