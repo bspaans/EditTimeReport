@@ -214,7 +214,7 @@ qCompleter :: Env -> String -> IO [String]
 qCompleter env s = return (filter (startsWith s) known)
   where known = ["extension", "language", "project", "filename"
                , "year", "month", "day", "dow", "doy", "limit"
-               , "asc", "desc"] ++ D.keys env
+               , "asc", "desc"] ++ D.keys env ++ map fst replCommands
 
 
 -- Convert AST to Query

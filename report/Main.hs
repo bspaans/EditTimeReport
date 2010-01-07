@@ -2,6 +2,7 @@ module Main where
 
 
 import Query
+import QueryAST
 import System 
 import System.Console.GetOpt
 import System.IO
@@ -20,6 +21,7 @@ data Options = Options {
                        , lang        :: [(String, String)]
                        , proj        :: [(String, String)]
                        , home        :: Maybe (IO String)  
+                       , format      :: [String]
                        } 
 
 defaultOptions :: Options
@@ -29,12 +31,14 @@ defaultOptions = Options { interactive = False
                          , proj = []
                          , home = Just (getHomeDirectory)
                          , askOptions = False
+                         , format = []
                          }
 
 options :: [ OptDescr (Options -> IO Options) ]
 options = [
            Option "a" ["ask"]         (NoArg setAskOptions)       "Ask options interactively"
          , Option "h" ["help"]        (NoArg outputHelp)          "Output command info"
+         , Option "f" ["format"]      (ReqArg setFormat "FORMAT") "Set default format"
          , Option "H" ["home"]        (ReqArg setHome "HOME")     "Set HOME directory"
          , Option "i" ["interactive"] (NoArg setInteractive)      "Start interactive query session"
          , Option "l" ["language"]    (ReqArg setLanguage "PATH") "Set languages directory"
@@ -44,6 +48,7 @@ options = [
 
 setAskOptions opt    = return opt { askOptions = True }
 outputHelp _         = putStrLn (usageInfo usage options) >> exitWith ExitSuccess
+setFormat f opt      = return opt { format = f : format opt } 
 setHome h opt        = return opt { home = Just (return h) }
 setInteractive opt   = return opt { interactive = True, askOptions = True }
 setLanguage path opt = return opt { lang = parseDescription path : (lang opt) } 
@@ -57,6 +62,9 @@ makeStatOptions opts = do h <- fromMaybe (return "none") $ home opts
                                     , projects   = toMatches $ proj opts
                                     , homePath   =  h }
 
+makePrintOptions :: Options -> E PrintOptions
+makePrintOptions opts = setPrinters (format opts) 
+
 
 main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           args <- getArgs
@@ -64,10 +72,13 @@ main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           when (msgs /= []) (error $ concat msgs)
           opts <- foldl (>>=) (return defaultOptions) actions
           so <- return $ makeStatOptions opts
+          po <- case makePrintOptions opts of
+                  Failed s -> error s
+                  Ok a -> return a
           if null nonOpts
             then putStrLn usage
             else do so <- if askOptions opts then askStatOptions else so
                     s  <- statsFromFile (head nonOpts) so 
-                    interactiveQueries s emptyPO
+                    interactiveQueries s po
 
 usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOG\n"

@@ -1,10 +1,7 @@
-module Calendar ( Calendar(Calendar)    -- Data structure
-                , flatten, fromCalendar -- Calendars
+module Calendar ( Calendar(..)          -- Data structure
+                , flatten               -- Calendars
                 , CalendarAlgebra       -- Algebra
-                , foldCalendar          -- foldCalendar
                 , calendarE, CalendarE  -- Calendar of Edits
-                , CalendarEAlgebra      -- Algebra
-                , module Edits
                 ) where 
 
 import Edits

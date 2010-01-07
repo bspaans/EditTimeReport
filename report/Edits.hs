@@ -1,9 +1,6 @@
 module Edits ( Edit(..), Edits                 -- AST
              , editsFromFile                   -- parsing
-             , Pred, PredE                     -- predicates
-             , selEq, selCombine, selCombine'  -- predicates
-             , comb, comb'                     -- combinators
-             , onYear, onMonth, onDay          -- filtering
+             , Pred                            -- predicates
              , groupWith, yearGroup            -- grouping
              , monthGroup, dayGroup            -- grouping
              , fileGroup                       -- grouping

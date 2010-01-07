@@ -1,13 +1,15 @@
 module Printers ( PrintOptions, POption(..)      -- Options
                 , PrinterF(..), emptyPO          -- Options
-                , isSet, set, unSet              -- Options
+                , isSet, set, unSet, setPrinters -- Options
                 , showTime                       -- Time strings
                 , getMonth, getDow               -- String converters
                 , printTree, printCSV, printHtml -- Printers
                 , printPlainText, printXHtml     -- Printers
                 ) where
 
+import QueryAST 
 import Control.Applicative
+import Data.Char
 import qualified Data.Set as S
 import Stats
 import Text.Printf
@@ -17,8 +19,8 @@ import qualified Text.XHtml as X
 
 
 type PrintOptions = S.Set POption
-data POption      = PrinterF PrinterF
-                  | Ident Int
+data POption      = PrinterF !PrinterF
+                  | Ident !Int
                   deriving (Eq, Ord, Show)
 data PrinterF = Csv 
               | Html 
@@ -36,6 +38,7 @@ isSet       :: POption -> PrintOptions -> Bool
 set         :: POption -> PrintOptions -> PrintOptions
 unSet       :: POption -> PrintOptions -> PrintOptions
 getPrinters :: PrintOptions -> [StatsTree -> String]
+setPrinters :: [String] -> E PrintOptions
 
 isSet   = S.member 
 set     = S.insert
@@ -49,6 +52,15 @@ getPrinters = map (printer . fromPrinters) . filter isPrinter . S.elems
         fromPrinters (PrinterF p) = p
         isPrinter (PrinterF _)    = True
         isPrinter _               = False
+
+parsePrinter "CSV"   = Ok Csv
+parsePrinter "HTML"  = Ok Html
+parsePrinter "TEXT"  = Ok Text
+parsePrinter "XHTML" = Ok XHtml
+parsePrinter s = Failed $ "No such format `" ++ s ++ "'"
+
+setPrinters [] = Ok (S.fromList [PrinterF Text])
+setPrinters p = S.fromList . map PrinterF <$> (sequence . map parsePrinter . map (map toUpper) $ p)
 
 
 printTree :: PrintOptions -> StatsTree -> String

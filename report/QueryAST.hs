@@ -31,6 +31,11 @@ instance Functor E where
   fmap f (Ok a)  = Ok $ f a
   fmap f (Failed e) = Failed e
 
+instance Monad E where
+  m >>= k = m `thenE` k
+  return = returnE
+
+
 thenE :: E a -> (a -> E b) -> E b
 m `thenE` k = 
    case m of 

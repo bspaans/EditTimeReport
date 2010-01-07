@@ -1,7 +1,7 @@
 module Stats ( EditStats(..), Stats, Header     -- Types
              , both, startsWith                 -- Handy functions
              , Time, sumTime, sumTime'          -- Time
-             , StatsTree(..)                    -- Tree data type
+             , StatsTree(..)                    -- Tree 
              , StatsTreeAlgebra, foldTree       -- Tree
              , statsFromFile                    -- Stats from file
              , module Edits, module StatOptions
@@ -10,9 +10,9 @@ module Stats ( EditStats(..), Stats, Header     -- Types
 import Calendar
 import Edits
 import StatOptions
+
 import Control.Applicative
 import Control.Arrow
-import Data.Function
 import Data.List
 import Data.Maybe 
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
