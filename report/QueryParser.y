@@ -25,6 +25,7 @@ import QueryAST
   ','       { TComma p      } 
   '*'       { TProduct p    } 
   ':='      { TAssign p     }
+  ';'       { TSemiColon p  }
   extension { TExtension p  } 
   language  { TLanguage p   } 
   project   { TProject p    } 
@@ -46,15 +47,26 @@ import QueryAST
 %%
 
 
+COMMANDS : MULTICOMMAND         { $1 }
+         | MULTICOMMAND COMMAND { $1 ++ [$2] }
+         | COMMAND              { [$1] }
+
+MULTICOMMAND: MULTICOMMAND SINGLECOMMAND  { [$2] ++ $1 } 
+            | SINGLECOMMAND               { [$1]       }
+
+SINGLECOMMAND : COMMAND SEMICOLON { $1 }
+
+SEMICOLON : ';' {}
+
+
 COMMAND : QUERY       { Left $1  } 
-      | ASSIGNMENT    { Right $1 }
-      |               { Left []  }
+        | ASSIGNMENT  { Right $1 }
 
 
 ASSIGNMENT : ident ':=' QUERY { QAssign $1 $3 }
 
 QUERY : SUBQUERY            { [$1]        }
-      | QUERY '*' SUBQUERY  { $1 ++ [$3]  }
+      | QUERY '*' SUBQUERY  { [$3] ++ $1  }
 
 SUBQUERY : GROUP INDEX CONSTRAINTS ORDER LIMIT {% if typeCheckConstraints $2 $3 
                                         then returnE $ QSubQuery $1 $2 $3 $4 $5
@@ -120,7 +132,7 @@ typeCheckQC a b c = if elem a [Year, Day, Doy]
                             QString s -> failE $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
                       else (returnE $ QC a b c)
 
-type ParseResult = E QCommand
+type ParseResult = E QCommands
 
 parseError   :: [ConstraintToken]  -> E a
 parseQuery   :: String   -> ParseResult

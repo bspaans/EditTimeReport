@@ -1,13 +1,14 @@
 module QueryAST ( QQuery, QConstraint(..), QSubQuery(..)
                 , QOper(..), QExpr(..), QOrder(..)
                 , QLimit(..), QIndex(..), E(..)
-                , QCommand, QAssign(..)
+                , QCommand, QCommands, QAssign(..)
                 , returnE, thenE, failE, catchE
                 ) where
 
 
 -- A straight forward AST for the Query DSL
 --
+type QCommands   = [QCommand]
 type QCommand    = Either QQuery QAssign 
 type QQuery      = [QSubQuery]
 data QAssign     = QAssign String QQuery

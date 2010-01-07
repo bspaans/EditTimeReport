@@ -111,7 +111,7 @@ makeConstraint p = con ([], [])
 makeTree      :: Query -> Stats -> StatsTree
 makeTree'     :: Stats -> Query -> Time -> [StatsTree]
 makeNode      :: String -> Stats -> Query -> StatsTree
-treeFromQuery :: String -> Env -> Stats -> E (Either StatsTree Env)
+treeFromQuery :: String -> Env -> Stats -> E ([StatsTree], Env)
 
 makeTree [] s = Root 0 []
 makeTree q  s = Root (length q + 1) (makeTree' s q (0,0,0))
@@ -145,9 +145,8 @@ makeNode s yes cs = Node (n tr) s tr
 -- of a String in the Query language.
 --
 treeFromQuery s env st = parsed
-  where parsed         = f <$> parseQuery s `thenE` fromQCommand env
-        f (Left s)     = Left $ flip makeTree st s
-        f (Right e)    = Right e
+  where parsed         = f <$> parseQuery s `thenE` fromQCommands env
+        f (s, env)     = (map (flip makeTree st) s, env)
 
 
 
@@ -169,11 +168,8 @@ interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive 
            Just "exit" -> do putStr "\n" ; onExit ; return ()
            Just s -> do addHistory s
                         case treeFromQuery s env stats of
-                           Ok a     -> case a of 
-                                         Left t  -> putStrLn $ treeToString t
-                                         Right e -> putStrLn "Definition added" >> interactiveQ' e
-                           Failed e -> putStrLn e
-                        interactiveQ' env
+                           Ok (st, e) -> mapM_ (putStrLn . treeToString) st >> interactiveQ' e
+                           Failed e -> putStrLn e >> interactiveQ' env
 
 onExit = do loc <- historyLocation
             writeHistory loc
@@ -193,16 +189,25 @@ qCompleter env s = return (filter (startsWith s) known)
 -- SubQueries (ie. a view function, a constraint and a 
 -- group function)
 --
+fromQCommands    :: Env -> QCommands -> E ([Query], Env)
 fromQCommand     :: Env -> QCommand -> E (Either Query Env)
 fromQQuery       :: Env -> QQuery -> E Query
 fromQSubQuery    :: Env -> QSubQuery -> E Query
 fromQIndex       :: QIndex -> (EditStats -> String)
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 
+fromQCommands env qs = fromQCommands' env [] qs
+  where fromQCommands' env res []     = Ok (res, env)
+        fromQCommands' env res (q:qs) = fromQCommand env q `thenE` f
+          where f (Left qr) = fromQCommands' env (qr : res) qs 
+                f (Right e) = fromQCommands' newEnv res qs
+                   where newEnv = D.union e env
+ 
 
 fromQCommand env (Left q)  = Left <$> fromQQuery env q
 fromQCommand env (Right a) = Right <$> i a
   where i (QAssign s q) = flip (D.insert s) env <$> (fromQQuery env q) 
+
 
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function
