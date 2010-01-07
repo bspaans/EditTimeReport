@@ -5,14 +5,16 @@ module Printers ( PrintOptions(..), POption (..)
                 , getMonth, getDow 
                 , showTimeE, showTime -- Time strings
                 , brackets, braced, showSub, showLanguage, showProject
-                , showExtension, treeToString, treeToHtml, treeToCSV
+                , showExtension, printString, printHtml, printCSV
                 ) where
 
 import Stats
-import Text.XHtml hiding (header)
+import qualified Text.Html as H
+import qualified Text.XHtml as X
 import Text.Printf
-import Text.CSV
+import qualified Text.CSV as CSV
 import Data.Monoid
+import Control.Applicative
 import Control.Arrow hiding ((+++))
 
 
@@ -41,7 +43,7 @@ getMonth :: Int -> String
 getDow :: Int -> String
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-getMonth n = months !! ((min 12 (max 1 n)) - 1)
+getMonth n = months !! (min 12 (max 1 n) - 1)
 
 days = ["Sunday", "Monday", "Tuesday", "Wednesday",
         "Thursday", "Friday", "Saturday"]
@@ -80,10 +82,10 @@ showExtension n = maybe n brackets
 
 -- StatsTree to Plain Text
 --
-treeToString :: StatsTree -> String
-treeToString (Root [] _ _) = "No matches"
-treeToString (Root ns _ t) = concatMap (tts' 1) ns ++ "\n"
-  where tts' lvl (Leaf time) = printf "%-10s" (showTime time)
+printString :: StatsTree -> String
+printString (Root [] _ _)      = "No matches"
+printString (Root ns _ t)      = concatMap (tts' 1) ns ++ "\n"
+  where tts' lvl (Leaf time)   = printf "%-10s" (showTime time)
         tts' lvl (Node _ s tr) = '\n' : replicate (lvl * 4) ' ' 
                               ++ printf "%-70s" s 
                               ++ concatMap (tts' (lvl + 1)) tr
@@ -92,21 +94,30 @@ treeToString (Root ns _ t) = concatMap (tts' 1) ns ++ "\n"
 
 -- StatsTree to Html table
 --
-treeToHtml :: StatsTree -> String
-treeToHtml = prettyHtml . foldTree (root, node, leaf)
-  where root ns h t = table (tr (concatHtml (map (th . toHtml) h)) +++ (concatHtml . map tr $ ns))
-        node cspan s ns = (td (toHtml s) ! [colspan cspan]) +++ table (concatHtml (map tr ns))
-        leaf = td . toHtml . showTime
+printHtml :: StatsTree -> String
+printHtml = H.prettyHtml . foldTree (root, node, leaf)
+  where root ns h t = H.h2 (H.toHtml t) H.+++ H.table (headers h H.+++ makeTable ns) H.+++ H.hr
+        headers h   = H.tr (H.concatHtml (map (H.th . H.toHtml) h))
+        makeTable ns = H.concatHtml (concatMap (map H.tr) ns)
+        node cspan  = concatMap . map  . (H.+++) . H.td . H.toHtml
+        leaf        = pure . H.td . H.toHtml . showTime
 
+
+-- StatsTree to XHtml table
+--
+printXHtml :: StatsTree -> String
+printXHtml = X.prettyHtml . foldTree (root, node, leaf)
+  where root ns h t = X.h2 (X.toHtml t) X.+++ X.table (headers h X.+++ makeTable ns) X.+++ X.hr
+        headers h   = X.tr (X.concatHtml (map (X.th . X.toHtml) h))
+        makeTable ns = X.concatHtml (concatMap (map X.tr) ns)
+        node cspan  = concatMap . map  . (X.+++) . X.td . X.toHtml
+        leaf        = pure . X.td . X.toHtml . showTime
 
 
 -- StatsTree to CSV 
 --
-treeToCSV :: StatsTree -> String
-treeToCSV = printCSV . foldTree (root, node, leaf)
-  where root :: [[[String]]] -> [String] -> String -> [[String]]
-        root ns h t = h : concat ns
-        node :: Int -> String -> [[[String]]] -> [[String]]
-        node _ s ns = concatMap (map (s :)) ns
-        leaf :: Time -> [[String]]
-        leaf t = [[showTime t]]
+printCSV :: StatsTree -> String
+printCSV = CSV.printCSV . foldTree (root, node, leaf)
+  where root ns h _ = h : concat ns
+        node _      = concatMap . map . (:)
+        leaf        = pure . pure . showTime
