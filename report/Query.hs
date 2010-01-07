@@ -74,6 +74,8 @@ import Control.Monad
 -- each of which adds a new level to the 
 -- generated tree.
 --
+type Commands   = (Queries, Env)
+type ExecResult = ([StatsTree], Env)
 type Queries    = [Query]
 type Env        = D.Map String Query
 type Query      = [SubQuery]
@@ -95,11 +97,6 @@ makeConstraint p = con ([], [])
           where n = if p s then (s : yes, no) else (yes, s:no)
 
 
--- Executing Queries
---
--- fromQCommands :: QCommands -> Env -> Stats -> ([StatsTree], Env)
--- fromQCommand :: QCommand -> Env -> Stats -> Either [StatsTree] Env
-
 
 -- Executing a Query 
 -- A Query works on Stats, which is a flat list of EditStats.
@@ -108,10 +105,13 @@ makeConstraint p = con ([], [])
 -- subquery. Executing a query can thus be seen 
 -- as building a tree from a list. 
 --
-makeTree      :: Query -> Stats -> StatsTree
-makeTree'     :: Stats -> Query -> Time -> [StatsTree]
-makeNode      :: String -> Stats -> Query -> StatsTree
-treeFromQuery :: String -> Env -> Stats -> E ([StatsTree], Env)
+executeCommands :: Stats -> Commands -> ExecResult
+makeTree        :: Query -> Stats -> StatsTree
+makeTree'       :: Stats -> Query -> Time -> [StatsTree]
+makeNode        :: String -> Stats -> Query -> StatsTree
+treeFromQuery   :: String -> Env -> Stats -> E ExecResult
+
+executeCommands st (q, env) = (map (flip makeTree st) q, env)
 
 makeTree [] s = Root 0 []
 makeTree q  s = Root (length q + 1) (makeTree' s q (0,0,0))
@@ -144,9 +144,7 @@ makeNode s yes cs = Node (n tr) s tr
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
 --
-treeFromQuery s env st = parsed
-  where parsed         = f <$> parseQuery s `thenE` fromQCommands env
-        f (s, env)     = (map (flip makeTree st) s, env)
+treeFromQuery s env st = executeCommands st <$> parseQuery s `thenE` fromQCommands env
 
 
 
@@ -189,7 +187,7 @@ qCompleter env s = return (filter (startsWith s) known)
 -- SubQueries (ie. a view function, a constraint and a 
 -- group function)
 --
-fromQCommands    :: Env -> QCommands -> E ([Query], Env)
+fromQCommands    :: Env -> QCommands -> E Commands
 fromQCommand     :: Env -> QCommand -> E (Either Query Env)
 fromQQuery       :: Env -> QQuery -> E Query
 fromQSubQuery    :: Env -> QSubQuery -> E Query
