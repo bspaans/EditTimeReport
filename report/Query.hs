@@ -67,6 +67,7 @@ import Control.Applicative
 import System.Console.Editline.Readline
 import System.Directory
 import System.FilePath
+import Text.Printf
 import Control.Monad
 
 
@@ -84,6 +85,9 @@ type Constraint = Stats -> (Stats, Stats)
 type View       = EditStats -> String
 type Group      = Stats -> [Stats]
 
+
+commandsFromFile :: Env -> FilePath -> IO (E Commands)
+commandsFromFile env f = parseFile f >>= return . (`thenE` fromQCommands env)
 
 
 -- A Constraint separates Stats matching 
@@ -147,7 +151,7 @@ makeNode s yes cs = Node (n tr) s tr
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
 --
-treeFromQuery s env st = executeCommands st <$> parseQuery s `thenE` fromQCommands env
+treeFromQuery s env st = executeCommands st <$> parseCommands s `thenE` fromQCommands env
 
 
 
@@ -156,24 +160,38 @@ treeFromQuery s env st = executeCommands st <$> parseQuery s `thenE` fromQComman
 interactiveQueries :: Stats -> PrintOptions -> IO()
 promptStart :: IO Bool
 
+type Action = Stats -> Env -> PrintOptions -> IO()
+
+printerDict = [("csv", Csv), ("html", Html), ("text", Text), ("xhtml", XHtml)]
+
+
+makePrintAction (s, pr) = [('-' : s, (m un , "Disable " ++ s ++ " printer"))
+                         , ('+' : s, (m se , "Enable "  ++ s ++ " printer"))]
+  where un = unSet (PrinterF pr)
+        se = set   (PrinterF pr)
+        m f stats env = repl stats env . f
+
+
+
+replCommands = concatMap makePrintAction printerDict
+            ++ [("exit", (\_ _ _ -> onExit, "Exit Program"))
+              , ("help", (\s e p -> printHelp >> repl s e p, "Output help"))]
+
+
+printHelp = putStrLn $ '\n' : unlines (sort (map h replCommands))
+  where h (c, (_, d)) = printf "   %-8s  %s" c d
+
 
 interactiveQueries stats po = promptStart >> repl stats (D.fromList []) po
 repl stats env po = do
          setCompletionEntryFunction (Just $ qCompleter env)
          maybeLine <- readline "> " 
          case maybeLine of
-           Nothing      -> do putStr "\n" ; onExit ; return ()
+           Nothing      -> onExit
            Just ""      -> repl stats env po
-           Just "exit"  -> do putStr "\n" ; onExit ; return ()
-           Just "+csv"  -> repl stats env (PrinterF Csv `set` po)
-           Just "-csv"  -> repl stats env (PrinterF Csv `unSet` po)
-           Just "+html" -> repl stats env (PrinterF Html `set` po)
-           Just "-html" -> repl stats env (PrinterF Html `unSet` po)
-           Just "+text" -> repl stats env (PrinterF Text `set` po)
-           Just "-text" -> repl stats env (PrinterF Text `unSet` po)
-           Just "+xhtml"-> repl stats env (PrinterF XHtml `set` po)
-           Just "-xhtml"-> repl stats env (PrinterF XHtml `unSet` po)
-           Just s       -> eval stats env po s
+           Just s       -> case lookup s replCommands of 
+                             Just (c, _) -> c stats env po
+                             Nothing -> eval stats env po s
 
 eval stats env po s = do 
   addHistory s
@@ -187,7 +205,7 @@ promptStart = do putStrLn (unlines ["Time Report 1.0a, interactive session"
                                    , "Type \"help\" for more information"])
                  historyLocation >>= readHistory
 
-onExit = historyLocation >>= writeHistory 
+onExit = putStr "\n" >> historyLocation >>= writeHistory >> return ()
 
 historyLocation :: IO FilePath
 historyLocation = (</> ".report_history") <$> getUserDocumentsDirectory

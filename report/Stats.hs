@@ -113,7 +113,7 @@ calendarEtoS so = fmap stat
      where stat = map (\e -> stats (head e) (last e) so) . fileGroup 
 
 calendarS so       = calendarEtoS so . calendarE
-statsFromFile f so = concat . flatten . calendarS so <$> parseFile f
+statsFromFile f so = concat . flatten . calendarS so <$> editsFromFile f
 
 
 

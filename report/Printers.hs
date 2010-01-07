@@ -52,7 +52,8 @@ getPrinters = map (printer . fromPrinters) . filter isPrinter . S.elems
 
 
 printTree :: PrintOptions -> StatsTree -> String
-printTree po st = concatMap ($st) (getPrinters po)
+printTree po st = if null p then "No printers selected." else concatMap ($st) p
+  where p = getPrinters po
 
 
 

@@ -1,5 +1,5 @@
 {
-module QueryParser (parseQuery) where
+module QueryParser (parseCommands, parseFile) where
 
 import QueryLexer
 import QueryAST
@@ -137,15 +137,15 @@ typeCheckQC a b c = if elem a [Year, Day, Doy]
 
 type ParseResult = E QCommands
 
-parseError   :: [ConstraintToken]  -> E a
-parseQuery   :: String   -> ParseResult
-parseFile    :: FilePath -> IO ParseResult
+parseError    :: [ConstraintToken]  -> E a
+parseCommands :: String   -> ParseResult
+parseFile     :: FilePath -> IO ParseResult
 
-parseError s = failE $ "Parse error on " ++  if null s then "<eof>"
+parseError    s = failE $ "Parse error on " ++  if null s then "<eof>"
                        else showTokenPos (head s)
-parseQuery s = case alexScanTokens' s of 
-                 Left err -> failE err
-                 Right a -> queryParser a
-parseFile f  = readFile f >>= return . parseQuery
+parseCommands s = case alexScanTokens' s of 
+                    Left err -> failE err
+                    Right a -> queryParser a
+parseFile     f = readFile f >>= return . parseCommands
 
 }
