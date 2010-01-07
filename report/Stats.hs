@@ -1,32 +1,27 @@
-module Stats ( EditStats(extInformation, language        -- EditStats
-             , project, fileName, editTime, edit)        -- EditStats
-             , Stats, stats                              -- Stats
-             , both, startsWith                          -- Handy functions
-             , Time, Seconds, fromSeconds, toSeconds     -- Time
-             , sumTime, diffEdit                         -- Time
-             , CalendarS, CalendarSAlgebra, calendarS    -- CalendarS + algebra
-             , StatsTree(..), StatsTreeAlgebra, foldTree -- Tree
-             , fromFile, statsFromFile, Header           -- Stats from file
-             , module Calendar , module StatOptions
+module Stats ( EditStats(..), Stats, Header     -- Types
+             , both, startsWith                 -- Handy functions
+             , Time, sumTime, sumTime'          -- Time
+             , StatsTree(..)                    -- Tree data type
+             , StatsTreeAlgebra, foldTree       -- Tree
+             , statsFromFile                    -- Stats from file
+             , module Edits, module StatOptions
              ) where 
 
+import Calendar
 import Edits
 import StatOptions
-import Maybe 
 import Control.Applicative
 import Control.Arrow
-import Data.List as L (groupBy, sort)
+import Data.Function
+import Data.List
+import Data.Maybe 
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
 import System.FilePath
-import Calendar
-import Data.List
-import Data.Function
-
 
 
 -- Stats — Data Structures
 --
-data EditStats  = FS { extInformation :: Maybe Description
+data EditStats  = ES { extInformation :: Maybe Description
                      , language       :: Maybe (Description, String)
                      , project        :: Maybe (Description, String)
                      , fileName       :: FilePath
@@ -43,11 +38,11 @@ matchFile  :: Edit -> Matches -> Maybe (Description, Match)
 startsWith :: Eq a => [a] -> [a] -> Bool
 both       :: (a -> b) -> a -> a -> (b, b)
 
-slash :: String
-slash = [pathSeparator]
 
-
-stats e e2 (SO ext lang proj home) = FS ex l p n t e
+-- Create EditStats (ie match languages, projects and 
+-- home directory, count edit time) from two Edits
+--
+stats e e2 (SO ext lang proj home) = ES ex l p n t e
   where ex               = D.lookup (takeExtension f) ext
         (l, p)           = both (fmap (second snd)) la pr
         (la, pr)         = both (matchFile e) lang (maybe [] new la ++ proj)
@@ -57,23 +52,28 @@ stats e e2 (SO ext lang proj home) = FS ex l p n t e
         replaceHome      = '~' : drop (length home) f
 
 
-
-matchFile e ps           = snd <$> (listToMaybe . reverse . sort $ matches)
-  where matches          = mapMaybe (uncurry match) ps
+-- Try to match a File with a Project or Language
+--
+matchFile edit matches'  = snd <$> (listToMaybe . reverse . sort $ matches)
+  where matches          = mapMaybe (uncurry match) matches'
         match fs c       = if check then j else Nothing
           where path     = if [last p] == slash then init p else slash
                 check    = startsWith fs s && length s > length fs
-                (s, p)   = (splitPath (file e), s !! length fs)
+                (s, p)   = (splitPath (file edit), s !! length fs)
                 j        = Just (length fs, (c, (fs, path))) 
 
+
+slash :: String
+slash = [pathSeparator]
 
 
 -- Times
 --
-diffEdit    :: Edit -> Edit -> (Int, Int, Int)
+diffEdit    :: Edit -> Edit -> Time
 toSeconds   :: Time -> Seconds
 fromSeconds :: Seconds -> Time
-sumTime     :: Stats -> (Int, Int, Int)
+sumTime     :: Stats -> Time
+sumTime'    :: [Time] -> Time
 
 
 type Seconds        = Int
@@ -87,7 +87,7 @@ diffEdit (Edit _ _ _ h m s _ _ _) (Edit _ _ _ h' m' s' _ _ _) = fromSeconds t
 toSeconds (h, m, s) = h * 3600 + m * 60 + s
 fromSeconds t       = (div t 3600, div (mod t 3600) 60, mod (mod t 3600) 60)
 sumTime             = fromSeconds . sum . map (toSeconds . editTime)
-
+sumTime'            = fromSeconds . sum . map toSeconds 
 
 
 -- Helper functions
@@ -107,16 +107,13 @@ type CalendarSAlgebra y m d r = CalendarAlgebra Stats y m d r
 
 calendarEtoS   :: StatOptions -> CalendarE -> CalendarS
 calendarS      :: StatOptions -> Edits -> CalendarS
-fromFile       :: FilePath -> StatOptions -> IO CalendarS
 statsFromFile  :: FilePath -> StatOptions -> IO Stats
 
 calendarEtoS so = fmap stat 
      where stat = map (\e -> stats (head e) (last e) so) . fileGroup 
 
 calendarS so       = calendarEtoS so . calendarE
-fromFile f so      = calendarS so <$> parseFile f
 statsFromFile f so = concat . flatten . calendarS so <$> parseFile f
-
 
 
 
