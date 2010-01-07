@@ -68,6 +68,6 @@ main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
             then putStrLn usage
             else do so <- if askOptions opts then askStatOptions else so
                     s  <- statsFromFile (head nonOpts) so 
-                    interactiveQueries s
+                    interactiveQueries s emptyPO
 
 usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOG\n"

@@ -1,5 +1,6 @@
 module Printers ( PrintOptions, POption(..)      -- Options
                 , PrinterF(..), emptyPO          -- Options
+                , isSet, set, unSet              -- Options
                 , showTime                       -- Time strings
                 , getMonth, getDow               -- String converters
                 , printTree, printCSV, printHtml -- Printers
@@ -28,14 +29,17 @@ data PrinterF = Csv
 emptyPO :: PrintOptions
 emptyPO = S.fromList []
 
+
 -- Handling PrintOptions
 --
 isSet       :: POption -> PrintOptions -> Bool
 set         :: POption -> PrintOptions -> PrintOptions
+unSet       :: POption -> PrintOptions -> PrintOptions
 getPrinters :: PrintOptions -> [StatsTree -> String]
 
 isSet   = S.member 
 set     = S.insert
+unSet   = S.delete
 
 getPrinters = map (printer . fromPrinters) . filter isPrinter . S.elems
   where printer Csv               = printCSV 
@@ -47,8 +51,10 @@ getPrinters = map (printer . fromPrinters) . filter isPrinter . S.elems
         isPrinter _               = False
 
 
-printTree :: StatsTree -> PrintOptions -> String
-printTree st = concatMap ($st) . getPrinters 
+printTree :: PrintOptions -> StatsTree -> String
+printTree po st = concatMap ($st) (getPrinters po)
+
+
 
 -- String Conversions
 --

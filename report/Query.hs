@@ -1,4 +1,4 @@
-module Query ( makeTree, interactiveQueries ) where
+module Query ( makeTree, interactiveQueries, module Printers ) where
 
 {-
  
@@ -153,27 +153,41 @@ treeFromQuery s env st = executeCommands st <$> parseQuery s `thenE` fromQComman
 
 -- Interactive Query prompt using editline
 --
-interactiveQueries :: Stats -> IO()
-interactiveQueries stats = do putStrLn (unlines ["Time Report 1.0a, interactive session"
-                                               , "Copyright 2009-2010, Bart Spaans"
-                                               , "Type \"help\" for more information"])
-                              loc <- historyLocation
-                              readHistory loc
-                              interactiveQ' (D.fromList [])
-  where interactiveQ' env = do
+interactiveQueries :: Stats -> PrintOptions -> IO()
+promptStart :: IO Bool
+
+
+interactiveQueries stats po = promptStart >> repl stats (D.fromList []) po
+repl stats env po = do
          setCompletionEntryFunction (Just $ qCompleter env)
          maybeLine <- readline "> " 
          case maybeLine of
-           Nothing     -> do putStr "\n" ; onExit ; return ()
-           Just ""     -> interactiveQ' env
-           Just "exit" -> do putStr "\n" ; onExit ; return ()
-           Just s -> do addHistory s
-                        case treeFromQuery s env stats of
-                           Ok (st, e) -> mapM_ (putStrLn . printHtml) st >> interactiveQ' e
-                           Failed e -> putStrLn e >> interactiveQ' env
+           Nothing      -> do putStr "\n" ; onExit ; return ()
+           Just ""      -> repl stats env po
+           Just "exit"  -> do putStr "\n" ; onExit ; return ()
+           Just "+csv"  -> repl stats env (PrinterF Csv `set` po)
+           Just "-csv"  -> repl stats env (PrinterF Csv `unSet` po)
+           Just "+html" -> repl stats env (PrinterF Html `set` po)
+           Just "-html" -> repl stats env (PrinterF Html `unSet` po)
+           Just "+text" -> repl stats env (PrinterF Text `set` po)
+           Just "-text" -> repl stats env (PrinterF Text `unSet` po)
+           Just "+xhtml"-> repl stats env (PrinterF XHtml `set` po)
+           Just "-xhtml"-> repl stats env (PrinterF XHtml `unSet` po)
+           Just s       -> eval stats env po s
 
-onExit = do loc <- historyLocation
-            writeHistory loc
+eval stats env po s = do 
+  addHistory s
+  case treeFromQuery s env stats of
+    Ok (st, e) -> mapM_ (putStrLn . printTree po) st >> repl stats e po
+    Failed e -> putStrLn e >> repl stats env po
+
+
+promptStart = do putStrLn (unlines ["Time Report 1.0a, interactive session"
+                                   , "Copyright 2009-2010, Bart Spaans"
+                                   , "Type \"help\" for more information"])
+                 historyLocation >>= readHistory
+
+onExit = historyLocation >>= writeHistory 
 
 historyLocation :: IO FilePath
 historyLocation = (</> ".report_history") <$> getUserDocumentsDirectory
@@ -207,14 +221,14 @@ fromQCommands env qs = fromQCommands' env [] qs
 
 fromQCommand env (Left q)  = Left <$> fromQQuery env q
 fromQCommand env (Right a) = Right <$> i a
-  where i (QAssign s q) = flip (D.insert s) env <$> (fromQQuery env q) 
+  where i (QAssign s q) = flip (D.insert s) env <$> fromQQuery env q
 
 
 -- First convert all the subqueries, then apply
 -- ordering and limiting to the last grouping function
 -- 
 fromQQuery env []     = Ok []
-fromQQuery env (c:cs) = fromQSubQuery env c `thenE` (\a -> (a++) <$> (fromQQuery env cs))
+fromQQuery env (c:cs) = fromQSubQuery env c `thenE` (\a -> (a++) <$> fromQQuery env cs)
 
 
 
