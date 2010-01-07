@@ -83,8 +83,11 @@ main = do args <- getArgs
             else do so <- if askOptions opts then askStatOptions else so
                     stats <- statsFromFile (head nonOpts) so
                     when (not . null $ commands opts) (putStr $ execute' emptyEnv po (commands opts) stats)
-                    when (length nonOpts > 1) (do co <- commandsFromFiles emptyEnv (tail nonOpts)
-                                                  putStr $ execute emptyEnv po co stats)
-                    when (interactive opts) (interactiveQueries po stats)
+                    if length nonOpts > 1 then do co <- commandsFromFiles emptyEnv (tail nonOpts)
+                                                  case co of 
+                                                    Ok (st, e) -> do putStr $ execute emptyEnv po co stats 
+                                                                     when (interactive opts) (interactiveQueries po stats e)
+                                                    Failed s   -> error s
+                                          else when (interactive opts) (interactiveQueries po stats emptyEnv)
 
 usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOGFILE [QUERY [QUERY ..]]\n"

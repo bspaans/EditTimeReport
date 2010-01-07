@@ -183,7 +183,7 @@ treeFromQuery s env st = executeCommands st <$> parseCommands s `thenE` fromQCom
 
 -- Interactive Query prompt using editline
 --
-interactiveQueries :: PrintOptions -> Stats -> IO()
+interactiveQueries :: PrintOptions -> Stats -> Env -> IO()
 promptStart :: IO Bool
 
 type Action = Stats -> Env -> PrintOptions -> IO()
@@ -208,7 +208,7 @@ printHelp = putStrLn $ '\n' : unlines (sort (map h replCommands))
   where h (c, (_, d)) = printf "   %-8s  %s" c d
 
 
-interactiveQueries po stats = promptStart >> repl stats (D.fromList []) po
+interactiveQueries po stats env = promptStart >> repl stats env po
 repl stats env po = do
          setCompletionEntryFunction (Just $ qCompleter env)
          maybeLine <- readline "> " 
