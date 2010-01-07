@@ -1,4 +1,5 @@
-module Query ( makeTree, interactiveQueries, module Printers ) where
+module Query ( makeTree, interactiveQueries, E(..)
+             , emptyEnv, execute, module Printers ) where
 
 {-
  
@@ -87,7 +88,18 @@ type Group      = Stats -> [Stats]
 
 
 commandsFromFile :: Env -> FilePath -> IO (E Commands)
-commandsFromFile env f = parseFile f >>= return . (`thenE` fromQCommands env)
+commandsFromFile env = fmap (>>= fromQCommands env) . parseFile
+
+execute :: Env -> PrintOptions -> [String] -> Stats -> String
+execute env po q st = case tr of 
+                        Ok a -> concatMap (printTree po) a 
+                        Failed f -> error f 
+  where tr = fst . executeCommands st <$> qc
+        qc = concat <$> mapM parseCommands q >>= fromQCommands env
+ 
+
+emptyEnv :: Env
+emptyEnv = D.fromList []
 
 
 -- A Constraint separates Stats matching 
@@ -157,7 +169,7 @@ treeFromQuery s env st = executeCommands st <$> parseCommands s `thenE` fromQCom
 
 -- Interactive Query prompt using editline
 --
-interactiveQueries :: Stats -> PrintOptions -> IO()
+interactiveQueries :: PrintOptions -> Stats -> IO()
 promptStart :: IO Bool
 
 type Action = Stats -> Env -> PrintOptions -> IO()
@@ -182,7 +194,7 @@ printHelp = putStrLn $ '\n' : unlines (sort (map h replCommands))
   where h (c, (_, d)) = printf "   %-8s  %s" c d
 
 
-interactiveQueries stats po = promptStart >> repl stats (D.fromList []) po
+interactiveQueries po stats = promptStart >> repl stats (D.fromList []) po
 repl stats env po = do
          setCompletionEntryFunction (Just $ qCompleter env)
          maybeLine <- readline "> " 

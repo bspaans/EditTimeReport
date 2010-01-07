@@ -60,7 +60,8 @@ parsePrinter "XHTML" = Ok XHtml
 parsePrinter s = Failed $ "No such format `" ++ s ++ "'"
 
 setPrinters [] = Ok (S.fromList [PrinterF Text])
-setPrinters p = S.fromList . map PrinterF <$> (sequence . map parsePrinter . map (map toUpper) $ p)
+setPrinters p = S.fromList <$> f p
+  where f = mapM (fmap PrinterF . parsePrinter . map toUpper) 
 
 
 printTree :: PrintOptions -> StatsTree -> String

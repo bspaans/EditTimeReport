@@ -2,17 +2,17 @@ module Main where
 
 
 import Query
-import QueryAST
+import Stats
+
+import Control.Monad
+import Control.Arrow
+import Data.Maybe
 import System 
 import System.Console.GetOpt
 import System.IO
-import Control.Monad
-import Control.Arrow
 import System.FilePath
 import System.Directory
-import Data.Maybe
 
-import Stats
 
 data Options = Options {
                          interactive :: Bool
@@ -78,7 +78,7 @@ main = do hSetBuffering stdout NoBuffering  -- remove LineBuffering from stdout
           if null nonOpts
             then putStrLn usage
             else do so <- if askOptions opts then askStatOptions else so
-                    s  <- statsFromFile (head nonOpts) so 
-                    interactiveQueries s po
+                    if length nonOpts == 1 then statsFromFile (head nonOpts) so >>= interactiveQueries po
+                                           else statsFromFile (head nonOpts) so >>= putStr . execute emptyEnv po (tail nonOpts) 
 
 usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOG\n"

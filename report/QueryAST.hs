@@ -6,6 +6,8 @@ module QueryAST ( QQuery, QConstraint(..), QSubQuery(..)
                 ) where
 
 
+import Control.Applicative
+
 -- A straight forward AST for the Query DSL
 --
 type QCommands   = [QCommand]
@@ -35,6 +37,12 @@ instance Monad E where
   m >>= k = m `thenE` k
   return = returnE
 
+
+instance Applicative E where
+  pure = return
+  (Ok f) <*> (Ok a) = Ok (f a)
+  (Failed f) <*> _  = Failed f
+  _  <*> (Failed f) = Failed f
 
 thenE :: E a -> (a -> E b) -> E b
 m `thenE` k = 
