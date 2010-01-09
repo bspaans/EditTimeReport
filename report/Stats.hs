@@ -1,17 +1,18 @@
 module Stats ( EditStats(..), Stats, Header     -- Types
+             , StatOptions(..)                  -- StatOptions
              , both, startsWith                 -- Handy functions
              , Time, sumTime, sumTime'          -- Time
              , StatsTree(..)                    -- Tree 
              , StatsTreeAlgebra, foldTree       -- Tree
              , statsFromFile                    -- Stats from file
-             , module Edits, module StatOptions
+             , parseDescription, toMatches      -- Match parser for Main
+             , module Edits
              ) where 
 
 import Edits
-import StatOptions
-
 import Control.Applicative
 import Control.Arrow
+import Data.Char
 import Data.List
 import Data.Maybe 
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
@@ -27,6 +28,18 @@ data EditStats  = ES { language       :: Maybe (Description, String)
                      , edit           :: Edit } deriving (Show, Eq)
 type Stats      = [EditStats]
 
+
+-- StatOptions — Types
+--
+data StatOptions = SO { languages  :: Languages,   -- languages src locations 
+                        projects   :: Projects,    -- projects src locations
+                        homePath   :: String    }  -- HOME dir
+type Description = String
+type SplitPath   = [FilePath]
+type Match       = (SplitPath, Description)
+type Matches     = [Match]
+type Languages   = Matches
+type Projects    = Matches
 
 
 -- Stats — Build EditStats
@@ -62,6 +75,27 @@ matchFile edit matches'  = snd <$> (listToMaybe . reverse . sort $ matches)
 
 slash :: String
 slash = [pathSeparator]
+
+
+-- Matches — Description Parsers
+--
+parseDescription :: String -> (String, String)
+toMatches        :: [(String, String)] -> Matches
+
+
+parseDescription [] = ("", "")
+parseDescription s  = maybe noDesc desc getDesc 
+  where reversed    = reverse s
+	desc (x,y)  = (reverse x, reverse y)
+	noDesc      = (s, dropTrailingPathSeparator . last . splitPath $ s)
+	getDesc     = do c <- elemIndex ')' reversed
+			 o <- elemIndex '(' reversed
+			 if all isSpace (take c reversed) 
+			   then return (drop (o + 1) reversed, 
+					take (o + 1) (drop (c + 1) reversed))
+			   else Nothing
+
+toMatches = map (first $ splitPath . addTrailingPathSeparator)
 
 
 -- Times

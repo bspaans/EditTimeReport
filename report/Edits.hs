@@ -55,20 +55,6 @@ editsFromFile f = parseEdits <$> readFile f
 -- Predicates 
 --
 type Pred a = a -> Bool
-type PredE  = Pred Edit
-
-selEq        :: Eq b => (a -> b) -> b -> Pred a
-selCombine   :: Eq a => Pred a-> Pred a -> Pred a
-selCombine'  :: Eq a => Pred a -> a -> Pred a
-comb         :: (a -> b -> c) -> (i -> a) -> (i -> b) -> i -> c
-comb'        :: (a -> a -> c) -> (i -> a) -> i -> i -> c
-
-
-selEq f a      = (==a) . f
-selCombine     = comb (==)
-selCombine'    = comb' (==) 
-comb  op f g a = f a `op` g a
-comb' op f a b = f a `op` f b
 
 
 -- Edits — Grouping
