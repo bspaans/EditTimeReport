@@ -14,6 +14,9 @@ import System.FilePath
 import System.Directory
 
 
+usage = unlines ["Report generator\nCopyright 2009-2010, Bart Spaans\n",
+        "Usage: report [OPTIONS] LOGFILE [QUERYFILE..]]\n"]
+
 data Options = Options {
                          interactive :: Bool
                        , askOptions  :: Bool
@@ -60,29 +63,31 @@ makeStatOptions opts = do h <- fromMaybe (return "none") $ home opts
                                     , projects   = toMatches $ proj opts
                                     , homePath   =  h }
 
-makePrintOptions :: Options -> E PrintOptions
-makePrintOptions opts = setPrinters (format opts) 
+makePO :: Options -> E PrintOptions
+makePO = setPrinters . format 
 
 
-main = do args <- getArgs
-          let (actions, nonOpts, msgs) = getOpt RequireOrder options args 
-          when (msgs /= []) (error $ concat msgs)
-          opts <- foldl (>>=) (return defaultOptions) actions
-          so <- makeStatOptions opts
-          po <- case makePrintOptions opts of
-                  Failed s -> error s
-                  Ok a -> return a
-          if null nonOpts
-            then putStrLn usage
-            else do stats <- statsFromFile (head nonOpts) so
-                    if not . null $ commands opts
-                      then putStr $ execute' emptyEnv po (commands opts) stats 
-                      else when (length nonOpts <= 1) (interactiveQueries po stats emptyEnv)
-                    if length nonOpts > 1 then do co <- commandsFromFiles emptyEnv (tail nonOpts)
-                                                  case co of 
-                                                    Ok (st, e) -> do putStr $ execute emptyEnv po co stats 
-                                                                     when (interactive opts) (interactiveQueries po stats e)
-                                                    Failed s   -> error s
-                                          else when (interactive opts) (interactiveQueries po stats emptyEnv)
+main = do 
+    args <- getArgs
+    let (actions, nonOpts, msgs) = getOpt RequireOrder options args 
+    when (msgs /= []) (error $ concat msgs)
+    opts <- foldl (>>=) (return defaultOptions) actions
+    so <- makeStatOptions opts
+    po <- case makePO opts of { Failed s -> error s ; Ok a -> return a }
+    if null nonOpts then putStrLn usage else exec' so po opts nonOpts
 
-usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOGFILE [QUERYFILE..]]\n"
+
+exec' so po opts nonOpts= 
+  do stats <- statsFromFile (head nonOpts) so
+     let i = interactiveQueries po stats
+     if not . null $ commands opts
+       then putStr $ execute' emptyEnv po (commands opts) stats 
+       else when (length nonOpts <= 1) (i emptyEnv)
+     if length nonOpts > 1 
+       then do co <- commandsFromFiles emptyEnv (tail nonOpts)
+               case co of 
+                 Failed s   -> error s
+                 Ok (st, e) -> do putStr $ execute emptyEnv po co stats 
+                                  when (interactive opts) (i e)
+       else when (interactive opts) (i emptyEnv)
+
