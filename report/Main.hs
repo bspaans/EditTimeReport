@@ -17,7 +17,6 @@ import System.Directory
 data Options = Options {
                          interactive :: Bool
                        , askOptions  :: Bool
-                       , ext         :: Extensions          
                        , lang        :: [(String, String)]
                        , proj        :: [(String, String)]
                        , home        :: Maybe (IO String)  
@@ -27,7 +26,6 @@ data Options = Options {
 
 defaultOptions :: Options
 defaultOptions = Options { interactive = False
-                         , ext = extensionDict
                          , lang = []
                          , proj = []
                          , home = Just (getHomeDirectory)
@@ -37,19 +35,16 @@ defaultOptions = Options { interactive = False
                          }
 
 options :: [ OptDescr (Options -> IO Options) ]
-options = [
-           Option "a" ["ask"]         (NoArg setAskOptions)       "Ask options interactively"
-         , Option "c" ["command"]     (ReqArg addCommand "CMD")   "Evaluate command."
-         , Option "h" ["help"]        (NoArg outputHelp)          "Output command info"
+options = [Option "h" ["help"]        (NoArg outputHelp)          "Output command info"
          , Option "f" ["format"]      (ReqArg setFormat "FORMAT") "Set default format (csv, html, text, xhtml)"
          , Option "H" ["home"]        (ReqArg setHome "HOME")     "Set HOME directory"
          , Option "i" ["interactive"] (NoArg setInteractive)      "Start interactive query session"
          , Option "l" ["language"]    (ReqArg setLanguage "PATH") "Set languages directory"
+         , Option "q" ["query"]     (ReqArg addCommand "QUERY")   "Evaluate query."
          , Option "p" ["project"]     (ReqArg setProject "PATH")  "Set projects directory"
           ]
 
 
-setAskOptions opt    = return opt { askOptions = True }
 addCommand c opt     = return opt { commands = c : commands opt }
 outputHelp _         = putStrLn (usageInfo usage options) >> exitWith ExitSuccess
 setFormat f opt      = return opt { format = f : format opt } 
@@ -61,8 +56,7 @@ setProject  path opt = return opt { proj = parseDescription path : (proj opt) }
 
 makeStatOptions :: Options -> IO StatOptions
 makeStatOptions opts = do h <- fromMaybe (return "none") $ home opts
-                          return SO { extensions = ext opts 
-                                    , languages  = toMatches $ lang opts
+                          return SO { languages  = toMatches $ lang opts
                                     , projects   = toMatches $ proj opts
                                     , homePath   =  h }
 
@@ -74,15 +68,16 @@ main = do args <- getArgs
           let (actions, nonOpts, msgs) = getOpt RequireOrder options args 
           when (msgs /= []) (error $ concat msgs)
           opts <- foldl (>>=) (return defaultOptions) actions
-          so <- return $ makeStatOptions opts
+          so <- makeStatOptions opts
           po <- case makePrintOptions opts of
                   Failed s -> error s
                   Ok a -> return a
           if null nonOpts
             then putStrLn usage
-            else do so <- if askOptions opts then askStatOptions else so
-                    stats <- statsFromFile (head nonOpts) so
-                    when (not . null $ commands opts) (putStr $ execute' emptyEnv po (commands opts) stats)
+            else do stats <- statsFromFile (head nonOpts) so
+                    if not . null $ commands opts
+                      then putStr $ execute' emptyEnv po (commands opts) stats 
+                      else when (length nonOpts <= 1) (interactiveQueries po stats emptyEnv)
                     if length nonOpts > 1 then do co <- commandsFromFiles emptyEnv (tail nonOpts)
                                                   case co of 
                                                     Ok (st, e) -> do putStr $ execute emptyEnv po co stats 
@@ -90,4 +85,4 @@ main = do args <- getArgs
                                                     Failed s   -> error s
                                           else when (interactive opts) (interactiveQueries po stats emptyEnv)
 
-usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOGFILE [QUERY [QUERY ..]]\n"
+usage = "Report generator\nCopyright 2009-2010, Bart Spaans\n\n  Usage: report [OPTIONS] LOGFILE [QUERYFILE..]]\n"

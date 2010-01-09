@@ -7,7 +7,6 @@ module Stats ( EditStats(..), Stats, Header     -- Types
              , module Edits, module StatOptions
              ) where 
 
-import Calendar
 import Edits
 import StatOptions
 
@@ -21,8 +20,7 @@ import System.FilePath
 
 -- Stats — Data Structures
 --
-data EditStats  = ES { extInformation :: Maybe Description
-                     , language       :: Maybe (Description, String)
+data EditStats  = ES { language       :: Maybe (Description, String)
                      , project        :: Maybe (Description, String)
                      , fileName       :: FilePath
                      , editTime       :: (Int, Int, Int)
@@ -42,9 +40,8 @@ both       :: (a -> b) -> a -> a -> (b, b)
 -- Create EditStats (ie match languages, projects and 
 -- home directory, count edit time) from two Edits
 --
-stats e e2 (SO ext lang proj home) = ES ex l p n t e
-  where ex               = D.lookup (takeExtension f) ext
-        (l, p)           = both (fmap (second snd)) la pr
+stats e e2 (SO lang proj home) = ES l p n t e
+  where (l, p)           = both (fmap (second snd)) la pr
         (la, pr)         = both (matchFile e) lang (maybe [] new la ++ proj)
         new (c, (fs, d)) = if d == slash then [] else [(fs ++ [d ++ slash] , d)]
         n                = if startsWith home f then replaceHome else f
@@ -103,7 +100,6 @@ startsWith (a:as) (b:bs) = a == b && startsWith as bs
 -- Calendar of Stats 
 --
 type CalendarS  = Calendar Stats
-type CalendarSAlgebra y m d r = CalendarAlgebra Stats y m d r
 
 calendarEtoS   :: StatOptions -> CalendarE -> CalendarS
 calendarS      :: StatOptions -> Edits -> CalendarS

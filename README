@@ -1,7 +1,7 @@
-Edit Time Report [Think of better name later]
----------------------------------------------
+Edit Time Report
+----------------
 
-  This is a tool that enables you to make detailed time reports of the work 
+  This is a tool that helps you make detailed time reports of the work 
   you have done in the past. It is mostly aimed at programmers who use a 
   scriptable editor (eg. vim, emacs,..), since these programs allow you to 
   log when you have edited a file.
@@ -14,16 +14,16 @@ Edit Time Report [Think of better name later]
   2. The daemon adds timestamps to these actions and writes them to a 
      flat plain text file.
 
-  3. A separate tool generates reports from the logs (in plain text, 
-     html,..)
+  3. A separate tool can parse the logs and enables you to query the data 
+     and generate reports (in plain text, html,xhtml or csv)
 
   4. You will be able to answer questions like:
 
-	 * How many hours did I spent working on a language/project/file?
-	 * What language have I used the most this year?
-	 * What's my most productive day of the week?
-	 * How much time did I work on year/month/week/day?
-	 * ..and on which project or language?
+     * How many hours did I spent working on a language/project/file?
+     * What language have I used the most this year?
+     * What's my most productive day of the week?
+     * How much time did I work on year/month/week/day?
+     * ..and on which project or language?
 
 
 Current status » Daemon
@@ -36,11 +36,10 @@ Current status » Daemon
    YEAR MONTH DAY HOUR MIN SEC DOW DOY COMMAND FILE
 
   where DOW and DOY resp. stand for the day of the week and year, 
-  and where COMMAND is one of EDIT, START or STOP. 
+  and where COMMAND is one of EDIT, NEW, START or STOP. 
 
   The program can be found in the daemon/ directory under the name 
-  `timechartd' and uses the basicliser library to do most of its 
-  heavy lifting.
+  `timechartd'.
 
 
 Current status » Client
@@ -48,31 +47,20 @@ Current status » Client
 
   The client is a simple bash script that reads a username and password 
   from a file and contacts the daemon. The edit message can be set using 
-  command line arguments. You can find the client in the daemon/ 
-  directory. It's called `timechart' at the moment, but this may change
+  command line arguments. You can find the client named 'timechart' in 
+  the daemon/ directory. 
 
 
 Current status » Generating Reports
 -----------------------------------
 
-  The reporting program is still under heavy development. It is written in 
-  Haskell and only makes use of the libraries in the Haskell Platform; 
-  no other packages are needed. It can currently parse the log file, 
+  The reporting program is written in Haskell. It can parse the log file, 
   do some analysis (like project and language classification) and produce 
-  HTML and plain text pages in tabular format. It also has a simple DSL 
-  comparable to SQL (but much, much simpler) to query the data,  
-  which can help you make your own reports. See Query.hs for a description 
-  of the grammar and some usage examples.
+  HTML, XHTML, csv and plain text output.
 
-
-Current status » Building
--------------------------
-
-  Running the daemon and client is already possible (I have been doing so 
-  since begin December), but the graphing functionality is still a bit 
-  lacking. If you don't mind that or if you are up to writing your 
-  own report generators, then these are the instructions to get you 
-  going: 
+  It has a simple DSL comparable to SQL (but much, much simpler) to query 
+  the data and create reports with your own restraints. See Query.hs 
+  in report/ for a description of the grammar and some usage examples.
 
 
 Installing the Daemon and Client
@@ -120,24 +108,15 @@ Installing the Daemon and Client
 Installing the Reporting Tool
 -----------------------------
 
-  As said, this program is not finished yet, but if you want to have a 
-  look at its current (pre-alpha) state, you can compile it using 
-  cabal:
+  Compiling the reporting tool is easy if you have cabal:
 
     cabal install
 
-  Or, alternatively, using ghc directly:
-
+  Alternatively, you could install the program manually if you have all
+  the dependencies (check Report.cabal):
+ 
+    alex QueryLexer.x
+    happy QueryParser.y
     ghc --make Main.hs 
 
-  To get into an interactive session where you can query the log 
-  file, use:
-
-    report chart.log
-
-  See Query.hs for a description of the grammar and some usage examples.
-  To produce a HTML report of the log file, you can then run:
-
-    report chart.log log.html
-
-  (Command line arguments will be implemented shortly)
+  Use the --help switch to find out more about the program. 
