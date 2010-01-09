@@ -312,7 +312,7 @@ fromQAs _      Proj  = "Project"
 fromQAs _      File  = "File Name"
 fromQAs _      Year  = "Year"
 fromQAs _      Month = "Month"
-fromQAs _      Day   = "Day of the Month"
+fromQAs _      Day   = "Day"
 fromQAs _      Dow   = "Day of the Week"
 fromQAs _      Doy   = "Day of the Year"
 

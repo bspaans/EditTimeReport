@@ -107,18 +107,19 @@ printPlainText (Root ns _ t ti)   = concatMap (tts' 1) ns ++ "\n\n   Total time:
 --
 printHtml :: StatsTree -> String
 printHtml = H.prettyHtml . foldTree (root, node, leaf)
-  where root ns h t ti = H.h2 (H.toHtml t) H.+++ H.table (headers h H.+++ makeTable ns) H.+++ H.hr
+  where root ns h t ti = H.h2 (H.toHtml t) H.+++ H.table (headers h H.+++ makeTable ns H.+++ total) H.+++ H.hr
+          where total  = H.tr(H.td (H.toHtml "TOTAL") H.! [H.colspan (length h - 1)] H.+++ H.td (H.toHtml . showTime $ ti))
         headers        = H.tr . H.concatHtml . map (H.th . H.toHtml) 
         makeTable      = H.concatHtml . concatMap (map H.tr) 
         node cspan t   = concatMap . map  . (H.+++) . H.td . H.toHtml
         leaf           = pure . H.td . H.toHtml . showTime
 
-
 -- StatsTree to XHtml table
 --
 printXHtml :: StatsTree -> String
 printXHtml = X.prettyHtml . foldTree (root, node, leaf)
-  where root ns h t ti = X.h2 (X.toHtml t) X.+++ X.table (headers h X.+++ makeTable ns) X.+++ X.hr
+  where root ns h t ti = X.h2 (X.toHtml t) X.+++ X.table (headers h X.+++ makeTable ns X.+++ total) X.+++ X.hr
+          where total  = X.tr(X.td (X.toHtml "TOTAL") X.! [X.colspan (length h - 1)] X.+++ X.td (X.toHtml . showTime $ ti))
         headers        = X.tr . X.concatHtml . map (X.th . X.toHtml) 
         makeTable      = X.concatHtml . concatMap (map X.tr) 
         node cspan t   = concatMap . map  . (X.+++) . X.td . X.toHtml
