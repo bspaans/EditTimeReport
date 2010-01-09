@@ -4,59 +4,6 @@ module Query ( makeTree, interactiveQueries, E(..)
              , module Printers 
              ) where
 
-{-
- 
- Examples of the embedded Query Language:
-
-   1.   group language * group extension
-   2.   language * extension   # same as no 1; grouping is default
-   3.   language * nogroup extension    
-   4.   nogroup language * nogroup extension
-   5.   language limit 5
-   6.   language ascending
-   7.   language (language == "Haskell")
-   8.   language (=="Haskell") # same as no 7; index is default 
-   9.   language ("Haskell")   # same as no 8; == is default operator
-  10.   language "Haskell"     # same as no 9; parens are optional
-  10.   language month == 1, year == 2010
-
- in (pseudo) SQL: 
-    
-   1. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
-   2. SELECT language, extension, sum(editTime) FROM stats GROUP BY language, extension
-   3. SELECT language, extension, sum(editTime) FROM stats GROUP BY language
-   4. SELECT language, extension, editTime FROM stats
-   5. SELECT language, sum(editTime) FROM stats GROUP BY language LIMIT 5
-   6. SELECT language, sum(editTime) AS e FROM stats GROUP BY language ORDER BY e ASC
-   7. SELECT language, sum(editTime) FROM stats WHERE language = "Haskell" GROUP BY language
-   8. SELECT language, sum(editTime) FROM stats WHERE language = "Haskell" GROUP BY language
-   9. SELECT language, sum(editTime) FROM stats WHERE language = "Haskell" GROUP BY language
-  10. SELECT language, sum(editTime) FROM stats WHERE month == 1 AND year == 2010 GROUP BY language 
- 
- Grammar:
-
-   COMMAND     := QUERY | ASSIGNMENT
-   QUERY       := ε | SUBQUERIES
-   SUBQUERIES  := SUBQUERY | SUBQUERIES * SUBQUERY
-   SUBQUERY    := GROUPING INDEX CONSTRAINTS ORDER? LIMIT? | IDENT
-   ASSIGNMENT  := IDENT := QUERY
-   LIMIT       := limit DIGIT+
-   ORDER       := ascending | descending | asc | desc
-   GROUPING    := group | & | nogroup | !
-   INDEX       := extension | language | project | filename | year | month | day | dow | doy 
-   CONSTRAINTS := ( CONS ) | CONS
-   CONS        := ε | CONSTRAINT | CONS , CONSTRAINT 
-   CONSTRAINT  := INDEX OPERATOR EXPR | OPERATOR EXPR | EXPR
-   OPERATOR    := == | = | <= | < | > | >= | != | /=
-   EXPR        := DIGIT+ | STRING
-   IDENT       := [A-Z]+[a-zA-Z0-9]*
-
-
-   tokens  := extension, language, project, filename, year, month, day, dow, doy
-            , ascending, descending, asc, desc, limit, '(', ')', ',', '==', '<='
-            , '<', '>', '>=', '!=', '/=', '*', '&', '!'
--}
-
 
 import Stats
 import Printers
@@ -181,7 +128,7 @@ makeNode s yes cs = Node (n tr) time s tr
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
 --
-treeFromQuery s env st = executeCommands st <$> parseCommands s `thenE` fromQCommands env
+treeFromQuery s env st = executeCommands st <$> (parseCommands s >>= fromQCommands env)
 
 
 
@@ -264,7 +211,7 @@ addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 
 fromQCommands env qs = fromQCommands' env [] qs
   where fromQCommands' env res []     = Ok (res, env)
-        fromQCommands' env res (q:qs) = fromQCommand env q `thenE` f
+        fromQCommands' env res (q:qs) = fromQCommand env q >>= f
           where f (Left qr) = fromQCommands' env (qr : res) qs 
                 f (Right e) = fromQCommands' newEnv res qs
                    where newEnv = D.union e env
@@ -279,7 +226,7 @@ fromQCommand env (Right a) = Right <$> i a
 -- ordering and limiting to the last grouping function
 -- 
 fromQQuery env []     = Ok []
-fromQQuery env (c:cs) = fromQSubQuery env c `thenE` (\a -> (a++) <$> fromQQuery env cs)
+fromQQuery env (c:cs) = fromQSubQuery env c >>= (\a -> (a++) <$> fromQQuery env cs)
 
 
 

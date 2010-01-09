@@ -1,10 +1,4 @@
-module QueryAST ( QQuery, QConstraint(..), QSubQuery(..)
-                , QOper(..), QExpr(..), QOrder(..)
-                , QLimit(..), QIndex(..), E(..)
-                , QCommand, QCommands, QAssign(..), QAs(..)
-                , returnE, thenE, failE, catchE
-                ) where
-
+module QueryAST where
 
 import Control.Applicative
 
@@ -24,7 +18,6 @@ data QOrder      = Asc | Desc | NoOrder
 data QLimit      = Limit Int | NoLimit
 data QAs         = As String | DefaultAs
 
-
 -- A Succes/Failure data type used for parsing
 --
 data E a = Ok a | Failed String
@@ -34,31 +27,7 @@ instance Functor E where
   fmap f (Failed e) = Failed e
 
 instance Monad E where
-  m >>= k = m `thenE` k
-  return = returnE
-
-
-instance Applicative E where
-  pure = return
-  (Ok f) <*> (Ok a) = Ok (f a)
-  (Failed f) <*> _  = Failed f
-  _  <*> (Failed f) = Failed f
-
-thenE :: E a -> (a -> E b) -> E b
-m `thenE` k = 
-   case m of 
-     Ok a -> k a
-     Failed e -> Failed e
-
-returnE :: a -> E a
-returnE a = Ok a
-
-failE :: String -> E a
-failE err = Failed err
-
-catchE :: E a -> (String -> E a) -> E a
-catchE m k = 
-   case m of
-     Ok a -> Ok a
-     Failed e -> k e
+  return = Ok
+  m >>= k = case m of { Ok a -> k a ; Failed e -> Failed e }
+  fail = Failed
 

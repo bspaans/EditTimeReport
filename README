@@ -1,23 +1,13 @@
 Edit Time Report
 ----------------
 
-  This is a tool that helps you make detailed time reports of the work 
-  you have done in the past. It is mostly aimed at programmers who use a 
-  scriptable editor (eg. vim, emacs,..), since these programs allow you to 
-  log when you have edited a file.
+  This is a tool that helps you make detailed reports of the time you have 
+  spent in your editor. The basic idea is to let your editor log what you have 
+  been working on by setting up some simple hooks. You can then use the 
+  `report' tool to read in these logs, query the data 
+  and generate reports in plain text, html, xhtml or csv format.
 
-  The premise:
-
-  1. Scriptable editors contact a permanently running daemon on each 
-     save/close/whatever.
-
-  2. The daemon adds timestamps to these actions and writes them to a 
-     flat plain text file.
-
-  3. A separate tool can parse the logs and enables you to query the data 
-     and generate reports (in plain text, html,xhtml or csv)
-
-  4. You will be able to answer questions like:
+  You will be able to answer questions like:
 
      * How many hours did I spent working on a language/project/file?
      * What language have I used the most this year?
@@ -26,41 +16,35 @@ Edit Time Report
      * ..and on which project or language?
 
 
-Current status » Daemon
------------------------
+Logging
+-------
+  
+  To be able to make logging easy and editor-agnostic we use a simple 
+  daemon and client architecture (this is however entirely optional; 
+  you could also let your editor write the logs directly).
+ 
+  The daemon `timechartd.py' was written in Python using the Twisted networking 
+  library. It logs to a flat plain text file in the following format:
 
-  The daemon was written in Python using the Twisted networking library. 
-  It logs to a flat plain text file in the following format:
+     YEAR MONTH DAY HOUR MIN SEC DOW DOY COMMAND FILE
+     2009 12 29 10 39 23 1 363 EDIT /home/bspaans/src/file.hs
 
-   2009 12 29 10 39 23 1 363 EDIT /home/bspaans/src/file.hs
-   YEAR MONTH DAY HOUR MIN SEC DOW DOY COMMAND FILE
+     where DOW and DOY resp. stand for the day of the week and year, 
+     and where COMMAND is one of EDIT, NEW, START or STOP. 
 
-  where DOW and DOY resp. stand for the day of the week and year, 
-  and where COMMAND is one of EDIT, NEW, START or STOP. 
-
-  The program can be found in the daemon/ directory under the name 
-  `timechartd'.
-
-
-Current status » Client
------------------------
-
-  The client is a simple bash script that reads a username and password 
-  from a file and contacts the daemon. The edit message can be set using 
-  command line arguments. You can find the client named 'timechart' in 
-  the daemon/ directory. 
+  The client `timechart' is a simple bash script that contacts the daemon. 
+  Its message can be set using command line arguments. 
 
 
-Current status » Generating Reports
------------------------------------
+Generating Reports
+------------------
 
   The reporting program is written in Haskell. It can parse the log file, 
   do some analysis (like project and language classification) and produce 
   HTML, XHTML, csv and plain text output.
 
-  It has a simple DSL comparable to SQL (but much, much simpler) to query 
-  the data and create reports with your own restraints. See Query.hs 
-  in report/ for a description of the grammar and some usage examples.
+  To create reports you can use the simple DSL to query the data. 
+  See the wiki for some usage examples and the grammar.
 
 
 Installing the Daemon and Client
@@ -77,15 +61,15 @@ Installing the Daemon and Client
   which is probably well known enough to be packaged by your distribution 
   already.
 
-  If all has gone right, the daemon, client and basicliser library will 
-  now all be installed. Next, you need to make sure the daemon is started 
-  when you login. There are several ways to do this, some dependent of 
+  If all has gone right, the daemon and client will now all be installed. 
+  Next, you need to make sure the daemon is started when you login. 
+  There are several ways to do this, some dependent of 
   window managers, but that should be easy enough to find out. 
 
   The command to be started on login should read like this:
 
 
-      timechartd /path/to/config/directory/
+      timechartd.py /path/to/config/directory/
 
 
   The path will be used to store the log file and the user database, 

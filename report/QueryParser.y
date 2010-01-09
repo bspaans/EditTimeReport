@@ -14,7 +14,7 @@ import QueryAST
 %tokentype  { ConstraintToken }
 %error      { parseError      }
 
-%monad      { E } { thenE } { returnE }
+%monad      { E } 
 
 %token 
   '>'       { TL p          } 
@@ -72,8 +72,8 @@ QUERY : SUBQUERY            { [$1]        }
       | QUERY '*' SUBQUERY  { $1 ++ [$3]  }
 
 SUBQUERY : GROUP INDEX CONSTRAINTS AS ORDER LIMIT {% if typeCheckConstraints $2 $3 
-                                        then returnE $ QSubQuery $1 $2 $3 $4 $5 $6
-                                        else failE "Parse error in constraints: expecting an integer"}
+                                        then return $ QSubQuery $1 $2 $3 $4 $5 $6
+                                        else fail "Parse error in constraints: expecting an integer"}
          | ident                               { QCall $1 }
 
 GROUP : group             { True  }
@@ -134,9 +134,9 @@ typeCheckConstraints i cs = all typeCheck cs
 
 typeCheckQC a b c = if elem a [Year, Day, Doy] 
                       then case c of 
-                            QInt _ -> returnE $ QC a b c
-                            QString s -> failE $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
-                      else (returnE $ QC a b c)
+                            QInt _ -> return $ QC a b c
+                            QString s -> fail $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
+                      else (return $ QC a b c)
 
 type ParseResult = E QCommands
 
@@ -144,9 +144,9 @@ parseError    :: [ConstraintToken]  -> E a
 parseCommands :: String   -> ParseResult
 parseFile     :: FilePath -> IO ParseResult
 
-parseError    s = failE "Parse error."
+parseError    s = fail "Parse error."
 parseCommands s = case alexScanTokens' s of 
-                    Left err -> failE err
+                    Left err -> fail err
                     Right a -> queryParser a
 parseFile     f = readFile f >>= return . parseCommands
 

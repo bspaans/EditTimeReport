@@ -125,8 +125,8 @@ sumTime'            = fromSeconds . sum . map toSeconds
 --
 both f a b = (f a, f b)
 
-startsWith _      []     = False
 startsWith []     _      = True
+startsWith _      []     = False
 startsWith (a:as) (b:bs) = a == b && startsWith as bs
 
 
