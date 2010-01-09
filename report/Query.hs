@@ -143,11 +143,14 @@ treeFromQuery   :: String -> Env -> Stats -> E ExecResult
 
 executeCommands st (q, env) = (map (flip makeTree st) q, env)
 
-makeTree [] s = Root [] [] ""
-makeTree q  s = Root nodes headers title
+makeTree [] s = Root [] [] "" (0,0,0)
+makeTree q  s = Root nodes headers title time
   where nodes = makeTree' s q (0,0,0)
         headers = map (\(h,_,_,_) -> h) q ++ ["Edit Time"]
         title = concat . intersperse " / " $ reverse headers
+        time = sumTime' (map f nodes)
+        f (Node _ t _ _) = t
+        f _ = (0,0,0)
 
 makeTree' s []            t = [Leaf t]
 makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
@@ -161,16 +164,17 @@ makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
 --
 pruneNodeTrees :: [StatsTree] -> [StatsTree]
 pruneNodeTrees = filter ((/=0) . f) 
-  where f (Node i _ _) = i
-        f _            = 1
+  where f (Node i _ _ _) = i
+        f _              = 1
 
 -- A Node is made of an Int describing the number of leafs,
 -- a string that is used for printing, and of course its children.
 --
-makeNode s yes cs = Node (n tr) s tr
-  where tr = makeTree' yes cs (sumTime yes)
+makeNode s yes cs = Node (n tr) time s tr
+  where tr = makeTree' yes cs time
+        time = sumTime yes
         n [] = 0       -- Count children
-        n ((Node i _ _):cs) = i + n cs
+        n ((Node i _ _ _):cs) = i + n cs
         n ((Leaf _):cs) = 1 + n cs
        
 
@@ -217,13 +221,16 @@ repl stats env po = do
            Just ""      -> repl stats env po
            Just s       -> case lookup s replCommands of 
                              Just (c, _) -> c stats env po
-                             Nothing -> catch (eval stats env po s) (\err -> putStrLn (show(err) ++ "sdf"))
+                             Nothing -> eval stats env po s
 
 eval stats env po s = do 
   addHistory s
   case treeFromQuery s env stats of
     Ok (st, e) -> (putStrLn $ printTree po st) >> repl stats e po
     Failed e -> putStrLn e >> repl stats env po
+  
+
+
 
 promptStart = do putStrLn (unlines ["Time Report 1.0a, interactive session"
                                    , "Copyright 2009-2010, Bart Spaans"
@@ -279,7 +286,7 @@ fromQQuery env (c:cs) = fromQSubQuery env c `thenE` (\a -> (a++) <$> fromQQuery 
 
 -- Sub queries
 --
-fromQSubQuery _ q@(QSubQuery _ Ext   _ _ _ _) = makeQuery q extInformation
+fromQSubQuery _ q@(QSubQuery _ Ext   _ _ _ _) = makeQuery q (takeExtension . fileName)
 fromQSubQuery _ q@(QSubQuery _ Lang  _ _ _ _) = makeQuery q language
 fromQSubQuery _ q@(QSubQuery _ Proj  _ _ _ _) = makeQuery q project
 fromQSubQuery _ q@(QSubQuery _ File  _ _ _ _) = makeQuery q fileName
@@ -325,7 +332,7 @@ fromQLimit (Limit i) = take i
 
 -- The view function
 --
-fromQIndex Ext   = fromMaybe "Unknown extension" . extInformation
+fromQIndex Ext   = takeExtension . fileName
 fromQIndex Lang  = maybe "Unknown language" snd . language
 fromQIndex Proj  = maybe "Unknown project" snd . project
 fromQIndex File  = fileName

@@ -1,6 +1,9 @@
 {
 module QueryParser (parseCommands, parseFile) where
 
+import Prelude hiding (catch)
+import qualified Control.Exception as C
+
 import QueryLexer
 import QueryAST
 
@@ -141,7 +144,7 @@ parseError    :: [ConstraintToken]  -> E a
 parseCommands :: String   -> ParseResult
 parseFile     :: FilePath -> IO ParseResult
 
-parseError    s = failE $ "Parse error " ++  if null s then "<eof>" else (show . length $ s) ++ "th symbol"
+parseError    s = failE "Parse error."
 parseCommands s = case alexScanTokens' s of 
                     Left err -> failE err
                     Right a -> queryParser a

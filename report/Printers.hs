@@ -95,41 +95,40 @@ showTime (h, m, s) = concat [f h, ":", f m, ":", f s]
 -- StatsTree to Plain Text
 --
 printPlainText :: StatsTree -> String
-printPlainText (Root [] _ _)   = "No matches"
-printPlainText (Root ns _ t)   = concatMap (tts' 1) ns ++ "\n"
-  where tts' lvl (Leaf time)   = printf "%-10s" (showTime time)
-        tts' lvl (Node _ s tr) = '\n' : replicate (lvl * 4) ' ' 
-                              ++ printf "%-70s" s 
-                              ++ concatMap (tts' (lvl + 1)) tr
-
+printPlainText (Root [] _ _ _)   = "No matches"
+printPlainText (Root ns _ t ti)   = concatMap (tts' 1) ns ++ "\n\n   Total time: " ++ showTime ti ++ "\n" 
+  where tts' lvl (Leaf time)     = printf "%10s" (showTime time)
+        tts' lvl (Node _ t s tr) = '\n' : replicate (lvl * 4) ' ' 
+                                ++ printf "%-70s" s 
+                                ++ concatMap (tts' (lvl + 1)) tr
 
 
 -- StatsTree to Html table
 --
 printHtml :: StatsTree -> String
 printHtml = H.prettyHtml . foldTree (root, node, leaf)
-  where root ns h t = H.h2 (H.toHtml t) H.+++ H.table (headers h H.+++ makeTable ns) H.+++ H.hr
-        headers     = H.tr . H.concatHtml . map (H.th . H.toHtml) 
-        makeTable   = H.concatHtml . concatMap (map H.tr) 
-        node cspan  = concatMap . map  . (H.+++) . H.td . H.toHtml
-        leaf        = pure . H.td . H.toHtml . showTime
+  where root ns h t ti = H.h2 (H.toHtml t) H.+++ H.table (headers h H.+++ makeTable ns) H.+++ H.hr
+        headers        = H.tr . H.concatHtml . map (H.th . H.toHtml) 
+        makeTable      = H.concatHtml . concatMap (map H.tr) 
+        node cspan t   = concatMap . map  . (H.+++) . H.td . H.toHtml
+        leaf           = pure . H.td . H.toHtml . showTime
 
 
 -- StatsTree to XHtml table
 --
 printXHtml :: StatsTree -> String
 printXHtml = X.prettyHtml . foldTree (root, node, leaf)
-  where root ns h t = X.h2 (X.toHtml t) X.+++ X.table (headers h X.+++ makeTable ns) X.+++ X.hr
-        headers     = X.tr . X.concatHtml . map (X.th . X.toHtml) 
-        makeTable   = X.concatHtml . concatMap (map X.tr) 
-        node cspan  = concatMap . map  . (X.+++) . X.td . X.toHtml
-        leaf        = pure . X.td . X.toHtml . showTime
+  where root ns h t ti = X.h2 (X.toHtml t) X.+++ X.table (headers h X.+++ makeTable ns) X.+++ X.hr
+        headers        = X.tr . X.concatHtml . map (X.th . X.toHtml) 
+        makeTable      = X.concatHtml . concatMap (map X.tr) 
+        node cspan t   = concatMap . map  . (X.+++) . X.td . X.toHtml
+        leaf           = pure . X.td . X.toHtml . showTime
 
 
 -- StatsTree to CSV 
 --
 printCSV :: StatsTree -> String
 printCSV = C.printCSV . foldTree (root, node, leaf)
-  where root ns h _ = h : concat ns
-        node _      = concatMap . map . (:)
-        leaf        = pure . pure . showTime
+  where root ns h _ _ = h : concat ns
+        node _ _      = concatMap . map . (:)
+        leaf          = pure . pure . showTime

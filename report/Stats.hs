@@ -122,17 +122,17 @@ statsFromFile f so = concat . flatten . calendarS so <$> editsFromFile f
 type Children  = Int -- Total number of children in tree
 type Header    = String
 type Title     = String
-data StatsTree = Root [StatsTree] [Header] String
-               | Node Children String [StatsTree] 
+data StatsTree = Root [StatsTree] [Header] String Time
+               | Node Children Time String [StatsTree] 
                | Leaf Time
                     deriving (Eq, Show)
 
-type StatsTreeAlgebra r n = ([n] -> [Header] -> String -> r 
-                          , Int -> String -> [n] -> n
+type StatsTreeAlgebra r n = ([n] -> [Header] -> String -> Time -> r 
+                          , Int -> Time -> String -> [n] -> n
                           , Time -> n)
 
 foldTree :: StatsTreeAlgebra r n -> StatsTree -> r
-foldTree (root, node, leaf) (Root tr h s) = root (map f tr) h s
-  where f (Node i s tr) = node i s (map f tr)
+foldTree (root, node, leaf) (Root tr h s t) = root (map f tr) h s t
+  where f (Node i t s tr) = node i t s (map f tr)
         f (Leaf e)      = leaf e
 
