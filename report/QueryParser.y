@@ -141,8 +141,7 @@ parseError    :: [ConstraintToken]  -> E a
 parseCommands :: String   -> ParseResult
 parseFile     :: FilePath -> IO ParseResult
 
-parseError    s = failE $ "Parse error on " ++  if null s then "<eof>"
-                       else showTokenPos (head s)
+parseError    s = failE $ "Parse error " ++  if null s then "<eof>" else (show . length $ s) ++ "th symbol"
 parseCommands s = case alexScanTokens' s of 
                     Left err -> failE err
                     Right a -> queryParser a

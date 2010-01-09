@@ -217,7 +217,7 @@ repl stats env po = do
            Just ""      -> repl stats env po
            Just s       -> case lookup s replCommands of 
                              Just (c, _) -> c stats env po
-                             Nothing -> eval stats env po s
+                             Nothing -> catch (eval stats env po s) (\err -> putStrLn (show(err) ++ "sdf"))
 
 eval stats env po s = do 
   addHistory s
