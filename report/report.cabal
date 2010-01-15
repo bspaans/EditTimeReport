@@ -1,0 +1,18 @@
+Name:               EditTimeReport
+Version:            1.0
+Cabal-Version:      >= 1.2
+License:            GPL
+License-file:       LICENSE
+Author:             Bart Spaans
+Maintainer:         Bart Spaans <bart.spaans@gmail.com>
+Synopsis:           Query language and report generator for edit logs.
+Description:        See exactly how much time you spent working on file X, 
+                    project Y or language Z. Or figure out what your most 
+                    productive time of the year, month or week is. 
+                    See the github page for more information.
+Build-Type:         Simple
+
+Executable report
+  Main-Is:          Main.hs
+  Build-Depends:    base >= 3 && < 5, haskell98, xhtml, html, pretty, filepath, containers, array, editline, directory, csv
+  Other-Modules:    QueryLexer, QueryParser
