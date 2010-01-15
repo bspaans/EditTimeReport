@@ -19,6 +19,7 @@ Description:        This program can be used to see exactly how much time
                     Support for more output formats is planned for the future.
                     See the github page for more information.
 Homepage:           http://github.com/bspaans/EditTimeReport
+Category:           Utils
 Bug-Reports:        mailto:bart.spaans@gmail.com
 Build-Type:         Simple
 
