@@ -1,5 +1,5 @@
 {
-module QueryParser (parseCommands, parseFile) where
+module QueryParser (ParseResult, parseCommands, parseFile) where
 
 import Prelude hiding (catch)
 import qualified Control.Exception as C

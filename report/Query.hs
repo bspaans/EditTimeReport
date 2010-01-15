@@ -1,6 +1,17 @@
-module Query ( makeTree, interactiveQueries, E(..)
-             , emptyEnv, execute, execute' 
-             , commandsFromFile, commandsFromFiles
+-- | This module can take a parsed query, 
+-- convert it into something it can use and 
+-- execute it; resulting in a StatsTree, which 
+-- can be printed by one of the Printers.
+--
+module Query ( 
+               -- * Commands
+               Commands, Queries, Query, SubQuery, 
+               View, Constraint, Group, Env,
+               -- * Execute Queries 
+               interactiveQueries, 
+               commandsFromFile, commandsFromFiles,
+               makeTree, QueryAST.E(..),
+               emptyEnv, execute, execute' 
              , module Printers 
              ) where
 
@@ -23,14 +34,14 @@ import Text.Printf
 import Control.Monad
 
 
--- Each query is represented by sub queries, 
--- each of which adds a new level to the 
--- generated tree.
---
 type Commands   = (Queries, Env)
 type ExecResult = ([StatsTree], Env)
 type Queries    = [Query]
 type Env        = D.Map String Query
+
+-- | Each query is represented by sub queries, 
+-- each of which adds a new level to the tree.
+--
 type Query      = [SubQuery]
 type SubQuery   = (Header, View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
@@ -38,6 +49,8 @@ type View       = EditStats -> String
 type Group      = Stats -> [Stats]
 
 
+-- | Read commands from files in a given environment.
+--
 commandsFromFiles :: Env -> [FilePath] -> IO (E Commands)
 commandsFromFiles env []     = return $ Ok ([], env)
 commandsFromFiles env (f:fp) = do o <- commandsFromFile env f
@@ -48,9 +61,16 @@ commandsFromFiles env (f:fp) = do o <- commandsFromFile env f
                                                      Failed s -> return (Failed s)
                                     Failed s -> return (Failed s)
 
+-- | Read commands from a file in a given environment.
+--
 commandsFromFile :: Env -> FilePath -> IO (E Commands)
 commandsFromFile env = fmap (>>= fromQCommands env) . parseFile
 
+
+-- | This function executes Commands in a given environment
+-- and then uses the Printers defined in the PrintOptions 
+-- to return a String representation of the StatsTree.
+--
 execute :: Env -> PrintOptions -> E Commands -> Stats -> String
 execute env po q st = case tr of 
                         Ok c -> printTree po c
@@ -75,21 +95,21 @@ makeConstraint p = con ([], [])
 
 
 
--- Executing a Query 
--- A Query works on Stats, which is a flat list of EditStats.
--- For our results to be meaningful we need to 
--- create a StatsTree, where each level represents another
--- subquery. Executing a query can thus be seen 
--- as building a tree from a list. 
---
 executeCommands :: Stats -> Commands -> ExecResult
-makeTree        :: Query -> Stats -> StatsTree
 makeTree'       :: Stats -> Query -> Time -> [StatsTree]
 makeNode        :: String -> Stats -> Query -> StatsTree
 treeFromQuery   :: String -> Env -> Stats -> E ExecResult
 
 executeCommands st (q, env) = (map (flip makeTree st) q, env)
 
+-- | Executing a Query: 
+-- A Query works on Stats, which is a flat list of EditStats.
+-- For our results to be meaningful we need to 
+-- create a StatsTree, where each level represents another
+-- subquery. Executing a query can thus be seen 
+-- as building a tree from a list. 
+--
+makeTree        :: Query -> Stats -> StatsTree
 makeTree [] s = Root [] [] "" (0,0,0)
 makeTree q  s = Root nodes headers title time
   where nodes = makeTree' s q (0,0,0)
@@ -132,7 +152,7 @@ treeFromQuery s env st = executeCommands st <$> (parseCommands s >>= fromQComman
 
 
 
--- Interactive Query prompt using editline
+-- | Interactive Query prompt using editline
 --
 interactiveQueries :: PrintOptions -> Stats -> Env -> IO()
 promptStart :: IO Bool
