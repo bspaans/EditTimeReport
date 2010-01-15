@@ -25,4 +25,4 @@ Build-Type:         Simple
 Executable report
   Main-Is:          Main.hs
   Build-Depends:    base >= 3 && < 5, haskell98, xhtml, html, pretty, filepath, containers, array, editline, directory, csv
-  Other-Modules:    QueryLexer, QueryParser
+  Other-Modules:    QueryLexer, QueryParser, Edits, Printers, Query, QueryAST, Stats
