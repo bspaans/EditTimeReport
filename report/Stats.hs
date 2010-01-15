@@ -1,12 +1,21 @@
-module Stats ( EditStats(..), Stats, Header     -- Types
-             , StatOptions(..)                  -- StatOptions
-             , both, startsWith                 -- Handy functions
-             , Time, sumTime, sumTime'          -- Time
-             , StatsTree(..)                    -- Tree 
-             , StatsTreeAlgebra, foldTree       -- Tree
-             , statsFromFile                    -- Stats from file
-             , parseDescription, toMatches      -- Match parser for Main
-             , module Edits
+module Stats ( -- * Statistics
+               EditStats(..), Stats, 
+               Description, Languages, Projects, Children, 
+               Matches, Match, SplitPath,statsFromFile,
+               -- ** Options
+               StatOptions(..),
+               -- ** Time
+               Time, sumTime, sumTime',
+               -- * Trees
+               Header, Title,
+               StatsTree(..),
+               StatsTreeAlgebra, foldTree,
+               -- * Misc.
+               -- ** Match parser for Main
+               parseDescription, toMatches,
+               -- ** Handy functions
+               both, startsWith,
+               module Edits
              ) where 
 
 import Edits
@@ -18,28 +27,32 @@ import Data.Maybe
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
 import System.FilePath
 
-
--- Stats — Data Structures
---
-data EditStats  = ES { language       :: Maybe (Description, String)
-                     , project        :: Maybe (Description, String)
-                     , fileName       :: FilePath
-                     , editTime       :: (Int, Int, Int)
-                     , edit           :: Edit } deriving (Show, Eq)
-type Stats      = [EditStats]
-
-
--- StatOptions — Types
---
-data StatOptions = SO { languages  :: Languages,   -- languages src locations 
-                        projects   :: Projects,    -- projects src locations
-                        homePath   :: String    }  -- HOME dir
 type Description = String
 type SplitPath   = [FilePath]
 type Match       = (SplitPath, Description)
 type Matches     = [Match]
 type Languages   = Matches
 type Projects    = Matches
+
+
+-- | Used to store the amount of time that was spent
+-- on a certain file while also listing some other 
+-- classifications.
+--
+data EditStats  = ES { language       :: Maybe (Description, String)
+                     , project        :: Maybe (Description, String)
+                     , fileName       :: FilePath
+                     , editTime       :: Time
+                     , edit           :: Edit } deriving (Show, Eq)
+type Stats      = [EditStats]
+
+
+-- | Options to be used when creating new Stats.
+--
+data StatOptions = SO { languages  :: Languages,   -- ^ Languages src locations 
+                        projects   :: Projects,    -- ^ Projects src locations
+                        homePath   :: String       -- ^ HOME directory
+                      }
 
 
 -- Stats — Build EditStats
@@ -152,15 +165,21 @@ statsFromFile f so = concat . flatten . calendarS so <$> editsFromFile f
 type Children  = Int -- Total number of children in tree
 type Header    = String
 type Title     = String
-data StatsTree = Root [StatsTree] [Header] String Time
+
+-- | Trees are used to represent the result of a Query.
+--
+data StatsTree = Root [StatsTree] [Header] Title Time
                | Node Children Time String [StatsTree] 
                | Leaf Time
                     deriving (Eq, Show)
 
-type StatsTreeAlgebra r n = ([n] -> [Header] -> String -> Time -> r 
+type StatsTreeAlgebra r n = ([n] -> [Header] -> Title -> Time -> r 
                           , Int -> Time -> String -> [n] -> n
                           , Time -> n)
 
+-- | A fold for StatsTrees. Most of the Printers are 
+-- written using this fold.
+--
 foldTree :: StatsTreeAlgebra r n -> StatsTree -> r
 foldTree (root, node, leaf) (Root tr h s t) = root (map f tr) h s t
   where f (Node i t s tr) = node i t s (map f tr)
