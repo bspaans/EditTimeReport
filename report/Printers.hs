@@ -1,10 +1,18 @@
-module Printers ( PrintOptions, POption(..)      -- Options
-                , PrinterF(..), emptyPO          -- Options
-                , isSet, set, unSet, setPrinters -- Options
-                , showTime                       -- Time strings
-                , getMonth, getDow               -- String converters
-                , printTree, printCSV, printHtml -- Printers
-                , printPlainText, printXHtml     -- Printers
+module Printers (
+                 -- * Printers
+                 printTree, printCSV, printHtml,
+                 printPlainText, printXHtml,    
+
+                 -- * Options
+                 PrintOptions, POption(..),
+                 PrinterF(..), emptyPO,
+                 isSet, set, unSet, setPrinters,
+
+                 -- * Time strings
+                 showTime, 
+
+                 -- * String converters
+                 getMonth, getDow,
                 ) where
 
 import QueryAST 
@@ -65,6 +73,9 @@ setPrinters p = S.fromList <$> f p
   where f = mapM (fmap PrinterF . parsePrinter . map toUpper) 
 
 
+
+-- | Selects the printers described in the PrintOptions.
+--
 printTree :: PrintOptions -> [StatsTree] -> String
 printTree po st = if null p then "No printers selected." 
                             else p >>= (\p' -> concatMap (p'$) (reverse st))
@@ -93,7 +104,7 @@ showTime (h, m, s) = concat [f h, ":", f m, ":", f s]
 
 
 
--- StatsTree to Plain Text
+-- | StatsTree to Plain Text
 --
 printPlainText :: StatsTree -> String
 printPlainText (Root [] _ _ _)   = "No matches"
@@ -105,7 +116,7 @@ printPlainText (Root ns _ t ti)  = concatMap (tts' 1) ns ++ "\n\n   Total time: 
                                 ++ concatMap (tts' (lvl + 1)) tr
 
 
--- StatsTree to Html table
+-- | StatsTree to Html table (no HTML header)
 --
 printHtml :: StatsTree -> String
 printHtml = H.prettyHtml . foldTree (root, node, leaf)
@@ -118,7 +129,7 @@ printHtml = H.prettyHtml . foldTree (root, node, leaf)
         node cspan t   = concatMap . map  . (H.+++) . H.td . H.toHtml
         leaf           = pure . H.td . H.toHtml . showTime
 
--- StatsTree to XHtml table
+-- | StatsTree to XHtml table (includes HTML header)
 --
 printXHtml :: StatsTree -> String
 printXHtml = X.prettyHtml . foldTree (root, node, leaf)
@@ -132,7 +143,7 @@ printXHtml = X.prettyHtml . foldTree (root, node, leaf)
         leaf           = pure . X.td . X.toHtml . showTime
 
 
--- StatsTree to CSV 
+-- | StatsTree to CSV String.
 --
 printCSV :: StatsTree -> String
 printCSV = C.printCSV . foldTree (root, node, leaf)
