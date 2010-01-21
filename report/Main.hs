@@ -38,13 +38,13 @@ defaultOptions = Options { interactive = False
                          }
 
 options :: [ OptDescr (Options -> IO Options) ]
-options = [Option "h" ["help"]        (NoArg outputHelp)          "Output command info"
-         , Option "f" ["format"]      (ReqArg setFormat "FORMAT") "Set default format (csv, html, text, xhtml)"
-         , Option "H" ["home"]        (ReqArg setHome "HOME")     "Set HOME directory"
-         , Option "i" ["interactive"] (NoArg setInteractive)      "Start interactive query session"
-         , Option "l" ["language"]    (ReqArg setLanguage "PATH") "Set languages directory"
-         , Option "q" ["query"]     (ReqArg addCommand "QUERY")   "Evaluate query."
-         , Option "p" ["project"]     (ReqArg setProject "PATH")  "Set projects directory"
+options = [ Option "f" ["format"]      (ReqArg setFormat "FORMAT") "Set default format (csv, html, text, xhtml)"
+          , Option "h" ["help"]        (NoArg outputHelp)          "Output command info"
+          , Option "H" ["home"]        (ReqArg setHome "HOME")     "Set HOME directory"
+          , Option "i" ["interactive"] (NoArg setInteractive)      "Start interactive query session"
+          , Option "l" ["language"]    (ReqArg setLanguage "PATH") "Set languages directory"
+          , Option "p" ["project"]     (ReqArg setProject "PATH")  "Set projects directory"
+          , Option "q" ["query"]       (ReqArg addCommand "QUERY") "Evaluate query."
           ]
 
 
