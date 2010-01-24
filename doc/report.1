@@ -1,0 +1,107 @@
+.TH report 1 "January 2009" "EditTimeReport 1.0" "Report"
+.SH NAME
+report \- Query editor logs and generate reports.
+.SH SYNOPSIS
+.B report 
+[OPTIONS] LOGFILE [QUERYFILE]...
+.SH DESCRIPTION
+This program can be used to see exactly how much time 
+you spent working on file X, project Y or language Z. 
+It can also be used to answer questions like: what is my most 
+productive time of the year, month or week? Which can help 
+with scheduling your tasks.
+
+In the long-run, this might help you make better time 
+estimates and diagnose stumbling blocks, while also providing 
+you with an overview of what you have worked on.
+
+The way reports are generated is by executing queries 
+in a simple query language which is described in more detail below.
+A number of output formats is being supported to display the result of the queries; 
+currently there are printers for plain text (the default), 
+html, xhtml and csv. Support for more output formats is 
+planned for the future.
+.SH OPTIONS
+.TP 
+.B -f FMT  --format FMT
+Set output format to one of csv, html, text or xhtml. This option is allowed to occur more than once. Default is text.
+.TP
+.B -h --help
+Output command information.
+.TP
+.B -H PATH  --home PATH
+Set the HOME directory. You only need to use this when your HOME environment 
+variable is not set (which is unlikely on unix-like systems) or when you want 
+to differ from the one specified there.
+.TP
+.B -i --interactive
+Starts an interactive query session (a prompt). This options is enabled by 
+default if no QUERYFILES have been given and no QUERY has been specified 
+with the --query option (see below).
+.TP
+.B -l PATH   --language PATH
+This directory will be used to classify edits on language. For example: 
+if you have a directory `~/src/' containing directories `c' and `haskell',
+you can specify the directory ~/src/, which will force the program to 
+tag edits in the `~/src/c/' and `~/src/haskell/' directories with their respective language.
+In the previous example the program expects the directories `c' and `haskell'
+to be project directories (see below). This option is allowed to occur more than once.
+.TP 
+.B -p PATH    --project PATH
+This directory will be used to classify edits on project. For example:
+if you have a directory `~/proj/' containing directories `hello-world' and 
+`system-f-compiler', you can specify the directory `~/proj/', which will force 
+the program to tag edits in the `~/proj/hello-world/' and `~/proj/system-f-compiler/'
+with their respective project. This option is allowed to occur more than once.
+.TP
+.B -q QUERY   --query QUERY
+Evaluate a single query.
+.SH ENVIRONMENT
+The HOME environment variable is used to figure out the HOME directory. 
+Alternatively, it can be set with the -H switch.
+.SH QUERY LANGUAGE
+The program starts by reading in the LOGFILE and calculating some 
+statistics.  We can imagine the resulting edit statistics as a simple table with multiple 
+indexes (filename, year, month, day, project, language, extension, dow, doy)
+combined with a time column, denoting the total time between consequent edits on the same file.
+
+To query this table a simple language was developed. 
+The grammar of a query is roughly as follows:
+
+QUERY       := QUERY '*' SUBQUERY | SUBQUERY
+.br
+SUBQUERY    := INDEX CONSTRAINTS? ORDERING? LIMIT?
+.br
+CONSTRAINTS := '(' C  ')' | C
+.br
+C           := CONSTRAINT | C ',' CONSTRAINT
+.br
+CONSTRAINT  := INDEX OPERATOR EXPR | OPERATOR EXPR | EXPR
+.br
+OPERATOR    := == | = | <= | < | > | >= | != | /=
+.br
+EXPR        := DIGIT+ | STRING
+.br
+ORDERING    := 'ascending' | 'descending' | 'asc' | 'desc'
+.br
+LIMIT       := 'limit' DIGIT+
+.br
+
+Multiple queries can be separated with a semicolon. 
+
+.SH EXAMPLES
+Example queries
+.TP
+.B year * month * day
+A calendar of edit times
+.TP
+.B year 2010 * month
+How much did I write per month in 2010? This expands 
+to the query: `year (year == 2010) * month'.
+.TP
+.B dow desc
+What is my most productive day of the week?
+.SH SEE ALSO
+timechartd(1)
+.SH AUTHOR
+Bart Spaans (bart.spaans@gmail.com)
