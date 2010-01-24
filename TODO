@@ -1,0 +1,35 @@
+Version 1.1:
+------------
+
+    * default report(s)
+
+    * a prelude like file, defining the Calendar function
+      (to be extended in the future)
+
+    * Some scripts in the scripts/ directory:
+        report-to-csv
+        report-to-html
+        report-to-text
+        report-to-xhtml
+        report-to-* LOGFILE OUTPUTFILE
+
+    * `titled' keyword in lexer, parser, AST and Query to give 
+      results a different title (nice for html and xhtml printers)
+    
+    * `man' documentation for `report' [DONE]
+
+
+
+
+Future:
+-------
+
+    * Find an Haskell-alternative to the daemon and rename report/ to src/
+
+    * Incorporate `chart' library? (currently depends on gtk2hs;
+      not that nice of a dependency to have)
+
+    * LaTeX printer
+
+    * Markdown printer
+
