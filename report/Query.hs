@@ -33,6 +33,7 @@ import System.FilePath
 import Text.Printf
 import Control.Monad
 
+import System.CPUTime
 
 type Commands   = (Queries, Env)
 type ExecResult = ([StatsTree], Env)
@@ -186,14 +187,22 @@ repl stats env po = do
          case maybeLine of
            Nothing      -> onExit
            Just ""      -> repl stats env po
-           Just s       -> case lookup s replCommands of 
-                             Just (c, _) -> c stats env po
-                             Nothing -> eval stats env po s
+           Just s       -> do addHistory s
+                              case lookup s replCommands of 
+                                Just (c, _) -> c stats env po
+                                Nothing -> eval stats env po s
 
 eval stats env po s = do 
-  addHistory s
+  t1 <- getCPUTime
   case treeFromQuery s env stats of
-    Ok (st, e) -> (putStrLn $ printTree po st) >> repl stats e po
+    Ok (st, e) -> do let fromPico p = fromInteger p * 1e-12 :: Float
+                         pr' s p = printf s (fromPico p)
+                     putStrLn $ printTree po st
+                     t2 <- getCPUTime 
+                     when (not (ShowExecTime False `isSet` po))
+                       (putStrLn (pr' "\nQuery executed in %.5f" (t2 - t1)
+                               ++ pr' " (+/-%.5f) seconds." cpuTimePrecision))
+                     repl stats e po
     Failed e -> putStrLn e >> repl stats env po
   
 

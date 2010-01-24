@@ -29,7 +29,7 @@ import Text.Printf
 
 type PrintOptions = S.Set POption
 data POption      = PrinterF !PrinterF
-                  | Ident !Int
+                  | ShowExecTime Bool
                   deriving (Eq, Ord, Show)
 data PrinterF = Csv 
               | Html 

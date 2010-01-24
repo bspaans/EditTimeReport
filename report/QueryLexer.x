@@ -32,7 +32,6 @@ tokens :-
   ";"           { \p s -> TSemiColon p              }
   extension     { \p s -> TExtension p              }
   extensions    { \p s -> TExtension p              }
-  exts          { \p s -> TExtension p              }
   ext           { \p s -> TExtension p              }
   e             { \p s -> TExtension p              }
   languages     { \p s -> TLanguage p               }
@@ -63,9 +62,9 @@ tokens :-
   ascending     { \p s -> TAscending p              }
   descending    { \p s -> TDescending p             }
   asc           { \p s -> TAscending p              }
-  as            { \p s -> TAs p                     }
   desc          { \p s -> TDescending p             }
   limit         { \p s -> TLimit p                  }
+  as            { \p s -> TAs p                     }
   group         { \p s -> TGroup p                  }
   "&"           { \p s -> TGroup p                  }
   nogrouping    { \p s -> TDontGroup p              }
