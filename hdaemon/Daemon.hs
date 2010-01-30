@@ -2,6 +2,8 @@ import Control.Concurrent
 import Control.Concurrent.Chan
 import Control.Exception hiding (catch)
 import Control.Monad
+import Data.Char
+import Data.Time
 import Network
 import System.Directory
 import System.Environment
@@ -10,8 +12,6 @@ import System.FilePath
 import System.IO
 import System.IO.Unsafe
 import System.Locale
-import Char
-import Data.Time
 import Text.Printf
 
 
@@ -28,7 +28,28 @@ import Text.Printf
 -}
 
 
--- | Editor Commands
+-- | Program Configuration
+--
+data Config = Config {
+               port :: PortNumber
+             , logLocation :: FilePath 
+             , verbose :: Bool         -- via command line
+             , allowedHosts :: [HostName]
+             }
+defaultPort :: PortNumber
+defaultPort = 3141
+
+defaultLogLocation :: IO FilePath
+defaultLogLocation = fmap (</> "editor.log") getHomeDirectory
+
+defaultAllowedHosts :: [HostName]
+defaultAllowedHosts = ["localhost"]
+
+
+
+-- | Editor Commands.
+-- Commands have either no arguments (ie. start, end)
+-- or one (edit, new).
 --
 data Command = CNoParams String 
              | CParams String String
@@ -41,19 +62,6 @@ instance Show Command where
 defaultCNoParams = ["START", "END"]
 defaultCParams   = ["EDIT" , "NEW"]
 
-
-
--- | Program Configuration
---
-data Config = Config {
-               port :: PortNumber
-             , logLocation :: FilePath 
-             , verbose :: Bool         -- via command line
-             , allowedHosts :: [HostName]
-             }
-defaultPort = 3141
-defaultLogLocation = fmap (</> "editor.log") getHomeDirectory
-defaultAllowedHosts = ["localhost"]
 
 
 
@@ -103,17 +111,19 @@ acceptConnections conf sock = do
 talk :: Config -> Handle -> HostName -> PortNumber -> IO()
 talk conf handle remote port = do 
   line <-fmap (filter (/= '\r')) (hGetLine handle)
-  logEvent (remote ++ ": entered command: `" ++ line ++ "' (" ++ show (length line) ++ ").")
-  case parseLine conf line of
-    Just s -> logCommand s >> logEvent (remote ++ ": succesfully parsed command.") >> talk conf handle remote port
+  logEvent (remote ++ ": entered command: `" ++ line ++ "'.")
+  case parseCommand line of
+    Just s  -> do logCommand s 
+                  logEvent (remote ++ ": succesfully parsed command.") 
+                  talk conf handle remote port
     Nothing -> do logEvent (remote ++ ": unable to parse command.")
                   if toUpper' line == "QUIT" 
                     then return()
                     else talk conf handle remote port
 
 
-parseLine :: Config -> String -> Maybe Command
-parseLine conf s = case words s of 
+parseCommand :: String -> Maybe Command
+parseCommand s = case words s of 
  [] -> Nothing
  (x:xs) -> if elem (toUpper' x) defaultCNoParams
              then Just (CNoParams x)
@@ -122,10 +132,16 @@ parseLine conf s = case words s of
                      then Just (CParams x  (unwords xs))
                      else Nothing
 
+toUpper' :: String -> String
 toUpper' = map toUpper
 
+
+-- | Worker threads
+--
 type WorkerThread = IO ()
 
+-- | Logs events to stdout if verbose flag is set
+--
 eventLogger :: Config -> WorkerThread
 eventLogger conf = do
   str <- readChan eventChan
@@ -136,7 +152,8 @@ eventLogger conf = do
     )
   eventLogger conf
 
-
+-- | Logs commands to specified file
+-- 
 commandLogger :: Config -> WorkerThread
 commandLogger conf = do
   cmd <- readChan commandChan 
@@ -145,21 +162,32 @@ commandLogger conf = do
   appendFile (logLocation conf) (printf "%s %s\n" t (show cmd))
   commandLogger conf
 
+
+-- | Configuration parser.
+-- Gathers options from command line arguments
+-- and configuration files.
+--
 parseConfiguration :: IO Config
 parseConfiguration = do
   args <- getArgs 
   let args' = filter (/="-v") args
       verbose = args' /= args
   when (length args' > 1) usageAndDie
-  let log = if null args' then defaultLogLocation else head args
+  log <- if null args' then defaultLogLocation else return $ head args
   when ((not . null) args' && head args' == "--help") outputHelp
-  if null confLocations 
+  clocs <- confLocations
+  if null clocs
     then return (Config defaultPort log verbose defaultAllowedHosts)
-    else parseConfigurationFile (head confLocations) verbose log
+    else parseConfigurationFile (head clocs) verbose log
 
+-- | TODO: parse configuration file
+--
 parseConfigurationFile :: FilePath -> Bool -> FilePath -> IO Config
 parseConfigurationFile fp verbose log = return (Config defaultPort log verbose defaultAllowedHosts)
 
+
+-- | Program
+--
 usageAndDie = do
   putStrLn usage 
   exitFailure
@@ -169,9 +197,11 @@ outputHelp = do
   putStrLn usage
   exitFailure
 
+usage :: String
 usage = "elogd [-v] [LOGFILE]\n"
 
 
+main :: IO ()
 main = do conf <- parseConfiguration
           withSocketsDo $ do
           forkIO (eventLogger conf)
