@@ -43,3 +43,5 @@ Future:
     * Case insensitive string matching operator
 
     * Optimized queries
+
+    * System.Locale for day and month names.
