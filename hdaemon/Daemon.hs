@@ -3,27 +3,33 @@ import Control.Concurrent.Chan
 import Control.Exception hiding (catch)
 import Control.Monad
 import Network
+import System.Directory
+import System.Environment
+import System.Exit
+import System.FilePath
 import System.IO
 import System.IO.Unsafe
 import System.Locale
 import Char
 import Data.Time
 import Text.Printf
-import Prelude hiding (log)
 
 
 {-
  
    1. Parse configuration file
-   2. Start listening on specified port (default: 3141)
-   3. Accept connections from specified hosts (default: only localhost)
-   4. Parse commands (default: start, stop, edit, new)
-   5. Append to log channel
-   6. Drop connection
-   7. Worker thread writes log to a file.
+   2. Start listening on specified port (default: 3141)                  *DONE*
+   3. Accept connections from specified hosts (default: only localhost)  *DONE*
+   4. Parse commands (default: start, stop, edit, new)                   *DONE*
+   5. Append to log channel                                              *DONE*
+   6. Drop connection                                                    *DONE*
+   7. Worker thread writes log to a file.                                *DONE*
 
 -}
 
+
+-- | Editor Commands
+--
 data Command = CNoParams String 
              | CParams String String
 
@@ -34,6 +40,29 @@ instance Show Command where
 
 defaultCNoParams = ["START", "END"]
 defaultCParams   = ["EDIT" , "NEW"]
+
+
+
+-- | Program Configuration
+--
+data Config = Config {
+               port :: PortNumber
+             , logLocation :: FilePath 
+             , verbose :: Bool         -- via command line
+             , allowedHosts :: [HostName]
+             }
+defaultPort = 3141
+defaultLogLocation = fmap (</> "editor.log") getHomeDirectory
+defaultAllowedHosts = ["localhost"]
+
+
+
+-- | Configuration file locations
+-- Checks for ~/.elogd and ~/.config/.elogd 
+
+confLocations = mapM (liftM (</> ".elogd")) dirs >>= filterM doesFileExist
+  where dirs = [home, liftM (</> ".config") home] 
+        home = getHomeDirectory      
 
 
 -- There are two global channels:
@@ -55,13 +84,6 @@ logEvent = writeChan eventChan
 logCommand :: Command -> IO ()
 logCommand = writeChan commandChan
 
-data Config = Config {
-               port :: PortNumber
-             , logLocation :: FilePath
-             , verbose :: Bool
-             }
-
-defaultConfig = Config 3141 "test.log" False
 
 
 acceptConnections :: Config -> Socket -> IO ()
@@ -69,7 +91,12 @@ acceptConnections conf sock = do
   (handle, remote, port) <- accept sock
   hSetBuffering handle NoBuffering
   logEvent (remote ++ ": connected.")
-  forkIO (talk conf handle remote port `finally` hClose handle)
+  forkIO ( (if elem remote (allowedHosts conf)
+             then talk conf handle remote port 
+             else logEvent (remote ++ ": hostname rejected."))
+          `finally` 
+          (logEvent (remote ++ ": closed connection.") 
+            >> hClose handle))
   acceptConnections conf sock
 
 
@@ -118,13 +145,38 @@ commandLogger conf = do
   appendFile (logLocation conf) (printf "%s %s\n" t (show cmd))
   commandLogger conf
 
+parseConfiguration :: IO Config
+parseConfiguration = do
+  args <- getArgs 
+  let args' = filter (/="-v") args
+      verbose = args' /= args
+  when (length args' > 1) usageAndDie
+  let log = if null args' then defaultLogLocation else head args
+  when ((not . null) args' && head args' == "--help") outputHelp
+  if null confLocations 
+    then return (Config defaultPort log verbose defaultAllowedHosts)
+    else parseConfigurationFile (head confLocations) verbose log
 
-mainLoop :: Config -> IO ()
-mainLoop conf = withSocketsDo $ do
-  forkIO (eventLogger conf)
-  forkIO (commandLogger conf)
-  sock <- listenOn (PortNumber $ port conf)
-  acceptConnections conf sock
+parseConfigurationFile :: FilePath -> Bool -> FilePath -> IO Config
+parseConfigurationFile fp verbose log = return (Config defaultPort log verbose defaultAllowedHosts)
+
+usageAndDie = do
+  putStrLn usage 
+  exitFailure
+
+outputHelp = do 
+  putStrLn "elogd - EditTimeReport daemon\n"
+  putStrLn usage
+  exitFailure
+
+usage = "elogd [-v] [LOGFILE]\n"
 
 
-main = mainLoop defaultConfig
+main = do conf <- parseConfiguration
+          withSocketsDo $ do
+          forkIO (eventLogger conf)
+          forkIO (commandLogger conf)
+          sock <- listenOn (PortNumber $ port conf)
+          acceptConnections conf sock `finally` sClose sock
+
+
