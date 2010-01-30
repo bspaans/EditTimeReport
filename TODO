@@ -24,12 +24,22 @@ Version 1.1:
 Future:
 -------
 
-    * Find an Haskell-alternative to the daemon and rename report/ to src/
+    * Write a Haskell or vimscript/elisp alternative to the daemon 
+      and rename report/ to src/
 
     * Incorporate `chart' library? (currently depends on gtk2hs;
-      not that nice of a dependency to have)
+      not that nice of a dependency to have). What about gnuplot?
 
     * LaTeX printer
 
     * Markdown printer
 
+    * Date functions, like Today, This Week, This Month, etc.
+
+    * Basic integer arithmetic expressions.
+
+    * Functions on strings / regex.
+
+    * Case insensitive string matching operator
+
+    * Optimized queries
