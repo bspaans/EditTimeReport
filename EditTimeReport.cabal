@@ -23,6 +23,7 @@ Category:           Utils
 Bug-Reports:        mailto:bart.spaans@gmail.com
 Build-Type:         Simple
 Data-Files:         doc/report.1
+                    scripts/editlog
 
 
 Executable report
@@ -33,7 +34,7 @@ Executable report
   Hs-Source-Dirs:   src/
 
 
-Executable elogd 
+Executable editlogd 
   Main-Is:          Daemon.hs
   Build-Depends:    base >= 3 && < 5, old-locale, network, time
   GHC-Options:      -O2
