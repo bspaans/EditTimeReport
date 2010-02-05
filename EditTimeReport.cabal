@@ -28,9 +28,11 @@ Executable report
   Build-Depends:    base >= 3 && < 5, haskell98, xhtml, html, pretty, filepath, containers, array, editline, directory, csv
   Other-Modules:    QueryLexer, QueryParser, Edits, Printers, Query, QueryAST, Stats
   GHC-Options:      -O2
+  Hs-Source-Dirs:   src/
 
 
 Executable elogd 
   Main-Is:          Daemon.hs
   Build-Depends:    base >= 3 && < 5, old-locale, network, time
   GHC-Options:      -O2
+  Hs-Source-Dirs:   src/
