@@ -1,58 +1,33 @@
 #!/bin/bash
 
 host="localhost"
-port="3001"
-user=""
-pass=""
+port="3141"
 lines=""
 cmd=""
-config=~/.vimchart
 
-if [ -f "$config" ] ; then
-    i=0
-    for x in $(awk -F: '{ print $1; print $2 }' "$config") ; do
-        if [ $i == 0 ] ; then 
-            user="$x"
-        else
-            pass="$x"
-        fi
-        i=$(($i + 1))
-    done
-else
-    echo "Missing $config. The program looks there for a username"
-    echo "and password formatted like this: username:password"
-    exit 1
-fi
-
-if [ "$user" == "" ] || [ "$pass" == "" ] ; then 
-    echo "Error: missing username or password."
-    echo "Add line formatted as user:pass to $config"
-    exit 1
-fi
-
-
-
-
-while getopts "en:sw:" flag
+while getopts "eh:n:p:sw:" flag
 do
     case "$flag" in
         e|ended)
-        cmd="vimEnded"
+        cmd="END"
         ;;
         h|host)
         host=$OPTARG
         ;;
+	help)
+	cmd=""
+	;;
         n|new)
-        cmd="newFile $OPTARG"
+        cmd="NEW $OPTARG"
         ;;
         p|port)
         port=$OPTARG
         ;;
         s|started)
-        cmd="vimStarted"
+        cmd="START"
         ;;
         w|write)
-        cmd="writeFile $OPTARG"
+        cmd="EDIT $OPTARG"
         ;;
     esac
 done
@@ -62,17 +37,16 @@ if [ "$cmd" == "" ] ; then
     echo
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
-    echo "    -e --ended          Vim session ended"
+    echo "    -e                  Session ended"
     echo "    -h HOST             (default localhost)"
-    echo "    -n --new            Editing new file"
-    echo "    -p PORT             (default 3000)"
-    echo "    -s --started         Vim session started"
-    echo "    -w --write FILE      Written file"
+    echo "    -n                  Editing new file"
+    echo "    -p PORT             (default 3141)"
+    echo "    -s                  Session started"
+    echo "    -w FILE             Written file"
     exit 1
 fi
 
 cat > tmp.session << EOF
-login $user $pass
 $cmd
 quit
 EOF

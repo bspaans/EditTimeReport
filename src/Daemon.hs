@@ -66,9 +66,9 @@ defaultCParams   = ["EDIT" , "NEW"]
 
 
 -- | Configuration file locations
--- Checks for ~/.elogd and ~/.config/.elogd 
+-- Checks for ~/.editlogd and ~/.config/.editlogd 
 
-confLocations = mapM (liftM (</> ".elogd")) dirs >>= filterM doesFileExist
+confLocations = mapM (liftM (</> ".editlogd")) dirs >>= filterM doesFileExist
   where dirs = [home, liftM (</> ".config") home] 
         home = getHomeDirectory      
 
@@ -193,12 +193,12 @@ usageAndDie = do
   exitFailure
 
 outputHelp = do 
-  putStrLn "elogd - EditTimeReport daemon\n"
+  putStrLn "editlogd - EditTimeReport daemon\n"
   putStrLn usage
   exitFailure
 
 usage :: String
-usage = "elogd [-v] [LOGFILE]\n"
+usage = "editlogd [-v] [LOGFILE]\n"
 
 
 main :: IO ()
