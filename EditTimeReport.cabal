@@ -22,6 +22,8 @@ Homepage:           http://github.com/bspaans/EditTimeReport
 Category:           Utils
 Bug-Reports:        mailto:bart.spaans@gmail.com
 Build-Type:         Simple
+Data-Files:         doc/report.1
+
 
 Executable report
   Main-Is:          Main.hs

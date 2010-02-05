@@ -1,13 +1,13 @@
 Edit Time Report
 ----------------
 
-  This is a tool that helps you make detailed reports of the time you have 
-  spent in your editor. The basic idea is to let your editor log what you have 
-  been working on by setting up some simple hooks. You can then use the 
-  `report' tool to read in these logs, query the data 
-  and generate reports in plain text, html, xhtml or csv format.
+  Logging the times of edits can give you a pretty good overview of 
+  the work you've done in the past and opens the data up for analysis.
+  Edit Time Report is a set of tools ('report', 'editlogd' and 'editlog')
+  that help with logging, querying and generating reports in plain text, 
+  html, xhtml or csv format.
 
-  You will be able to answer questions like:
+  Using this tools, you will be able to answer questions like:
 
      * How many hours did I spent working on a language/project/file?
      * What language have I used the most this year?
@@ -20,87 +20,74 @@ Logging
 -------
   
   To be able to make logging easy and editor-agnostic we use a simple 
-  daemon and client architecture (this is however entirely optional; 
-  you could also let your editor write the logs directly).
+  daemon and client architecture (you could also let your editor 
+  write the logs directly if you want).
  
-  The daemon `timechartd.py' was written in Python using the Twisted networking 
-  library. It logs to a flat plain text file in the following format:
+  The daemon `editlogd' is an Haskell program that logs to a flat plain 
+  text file in the following format:
 
      YEAR MONTH DAY HOUR MIN SEC DOW DOY COMMAND FILE
      2009 12 29 10 39 23 1 363 EDIT /home/bspaans/src/file.hs
 
-     where DOW and DOY resp. stand for the day of the week and year, 
-     and where COMMAND is one of EDIT, NEW, START or STOP. 
+     where DOW and DOY resp. stand for the day of the week (0 is sunday)
+     and year, and where COMMAND is one of EDIT, NEW, START or STOP. 
 
-  The client `timechart' is a simple bash script that contacts the daemon. 
-  Its message can be set using command line arguments. 
+  The client `editlog' is a simple bash script that contacts the daemon 
+  when executed and should be called from your editor. 
 
 
 Generating Reports
 ------------------
 
-  The reporting program is written in Haskell. It can parse the log file, 
+  The reporting program is also written in Haskell. It can parse the log file, 
   do some analysis (like project and language classification) and produce 
   HTML, XHTML, csv and plain text output.
 
-  To create reports you can use the simple DSL to query the data. 
-  See the wiki for some usage examples and the grammar.
+  To create reports you can use a tiny DSL to query the data. For some usage 
+  examples and the grammar, you should check out the wiki.
 
 
-Installing the Daemon and Client
---------------------------------
+Installing
+----------
 
-  Install the daemon and client by going into the daemon/ 
-  directory and doing a: 
+  Compiling the tool-set is easy if you have cabal:
 
+    cabal install
 
-      sudo python setup.py install
+  Alternatively, you could install the program manually if you have all
+  the dependencies (see EditTimeReport.cabal):
+ 
+    alex QueryLexer.x
+    happy QueryParser.y
+    ghc --make Main.hs 
+    ghc --make Daemon.hs
 
-
-  This will only work if you already have the Twisted library installed, 
-  which is probably well known enough to be packaged by your distribution 
-  already.
-
-  If all has gone right, the daemon and client will now all be installed. 
   Next, you need to make sure the daemon is started when you login. 
   There are several ways to do this, some dependent of 
   window managers, but that should be easy enough to find out. 
 
   The command to be started on login should read like this:
 
+      editlogd /path/to/log/file
 
-      timechartd.py /path/to/config/directory/
-
-
-  The path will be used to store the log file and the user database, 
-  so make sure it's writable. 
+  The path can be used to specify the location of the logfile. 
+  If left blank ~/report.log will be used.
 
   Now the only thing that remains is to set up your editor hooks.
-  I have been using the following for vim to give you an idea:
 
 
-      " chart functionality
-      autocmd VimEnter * :silent ! timechart -s
-      autocmd VimLeave * :silent ! timechart -e
-      autocmd BufNewFile * :silent ! timechart -n <afile>:p
-      autocmd BufWritePost * :silent ! timechart -w <afile>:p
+Editor Hooks :: vim
+-------------------
 
+    Put the following in your ~/.vimrc:
 
-  That's it!
+    " chart functionality
+    autocmd VimEnter * :silent ! editlog -s
+    autocmd VimLeave * :silent ! editlog -e
+    autocmd BufNewFile * :silent ! editlog -n <afile>:p
+    autocmd BufWritePost * :silent ! editlog -w <afile>:p
 
+Editor Hooks :: emacs
+---------------------
 
-Installing the Reporting Tool
------------------------------
-
-  Compiling the reporting tool is easy if you have cabal:
-
-    cabal install
-
-  Alternatively, you could install the program manually if you have all
-  the dependencies (check Report.cabal):
- 
-    alex QueryLexer.x
-    happy QueryParser.y
-    ghc --make Main.hs 
-
-  Use the --help switch to find out more about the program. 
+    TODO

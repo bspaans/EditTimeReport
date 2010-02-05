@@ -18,21 +18,13 @@ Version 1.1:
     
     * `man' documentation for `report' [DONE]
 
+    * Write a Haskell alternative to the daemon and rename report/ 
+      to src/ [DONE]
 
 
 
 Future:
 -------
-
-    * Write a Haskell or vimscript/elisp alternative to the daemon 
-      and rename report/ to src/
-
-    * Incorporate `chart' library? (currently depends on gtk2hs;
-      not that nice of a dependency to have). What about gnuplot?
-
-    * LaTeX printer
-
-    * Markdown printer
 
     * Date functions, like Today, This Week, This Month, etc.
 
@@ -45,3 +37,9 @@ Future:
     * Optimized queries
 
     * System.Locale for day and month names.
+
+    * gnuplot/csv printer
+
+    * LaTeX printer
+
+    * Markdown printer
