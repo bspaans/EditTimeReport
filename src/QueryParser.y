@@ -47,6 +47,7 @@ import QueryAST
   integer   { TInteger p $$ } 
   string    { TString p $$  }
   ident     { TIdent p $$   }
+  titled    { TTitled p $$  } 
 
 %%
 
@@ -61,12 +62,12 @@ MULTICOMMAND: MULTICOMMAND SINGLECOMMAND  { $1 ++ [$2] }
 SINGLECOMMAND : COMMAND ';' { $1 }
 
 
+COMMAND : QUERY               { Left ($1, Nothing)  } 
+	| QUERY titled string { Left ($1, Just $3)  }
+        | ASSIGNMENT          { Right $1            }
 
-COMMAND : QUERY       { Left $1  } 
-        | ASSIGNMENT  { Right $1 }
 
-
-ASSIGNMENT : ident ':=' QUERY { QAssign $1 $3 }
+ASSIGNMENT : ident ':=' QUERY { QAssign $1 ($3, Nothing) }
 
 QUERY : SUBQUERY            { [$1]        }
       | QUERY '*' SUBQUERY  { $1 ++ [$3]  }

@@ -14,7 +14,7 @@ Version 1.1:
         report-to-* LOGFILE OUTPUTFILE
 
     * `titled' keyword in lexer, parser, AST and Query to give 
-      results a different title (nice for html and xhtml printers)
+      results a different title (nice for html and xhtml printers) [DONE]
     
     * `man' documentation for `report' [DONE]
 

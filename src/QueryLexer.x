@@ -70,6 +70,7 @@ tokens :-
   nogrouping    { \p s -> TDontGroup p              }
   nogroup       { \p s -> TDontGroup p              }
   "!"           { \p s -> TDontGroup p              }
+  titled        { \p s -> TTitled p s               }
   $digit+       { \p s -> TInteger p (read s)       }
   $upper$ident* { \p s -> TIdent p s                }
   \"$s*\"       { \p s -> TString p (init (tail s)) }
@@ -105,6 +106,7 @@ data ConstraintToken = TExtension AlexPosn
                      | TIdent AlexPosn String
                      | TAssign AlexPosn
                      | TString AlexPosn String
+                     | TTitled AlexPosn String
                      deriving (Eq, Show)
 
 
@@ -155,4 +157,5 @@ showTokenPos (TAssign p)     = showPos p
 showTokenPos (TIdent p _)    = showPos p
 showTokenPos (TSemiColon p)  = showPos p
 showTokenPos (TAs p)         = showPos p
+showTokenPos (TTitled p _)   = showPos p
 }

@@ -43,7 +43,7 @@ type Env        = D.Map String Query
 -- | Each query is represented by sub queries, 
 -- each of which adds a new level to the tree.
 --
-type Query      = [SubQuery]
+type Query      = ([SubQuery], Maybe String)
 type SubQuery   = (Header, View, Constraint, Group)
 type Constraint = Stats -> (Stats, Stats)
 type View       = EditStats -> String
@@ -96,11 +96,10 @@ makeConstraint p = con ([], [])
 
 
 
-executeCommands :: Stats -> Commands -> ExecResult
-makeTree'       :: Stats -> Query -> Time -> [StatsTree]
-makeNode        :: String -> Stats -> Query -> StatsTree
+makeNode        :: String -> Stats -> [SubQuery] -> StatsTree
 treeFromQuery   :: String -> Env -> Stats -> E ExecResult
 
+executeCommands :: Stats -> Commands -> ExecResult
 executeCommands st (q, env) = (map (flip makeTree st) q, env)
 
 -- | Executing a Query: 
@@ -111,15 +110,16 @@ executeCommands st (q, env) = (map (flip makeTree st) q, env)
 -- as building a tree from a list. 
 --
 makeTree        :: Query -> Stats -> StatsTree
-makeTree [] s = Root [] [] "" (0,0,0)
-makeTree q  s = Root nodes headers title time
+makeTree ([],t) s = Root [] [] (fromMaybe "" t) (0,0,0)
+makeTree (q, t) s = Root nodes headers title time
   where nodes = makeTree' s q (0,0,0)
         headers = map (\(h,_,_,_) -> h) q ++ ["Edit Time"]
-        title = concat . intersperse " / " $ reverse headers
+        title = fromMaybe (concat . intersperse " / " $ reverse headers) t
         time = sumTime' (map f nodes)
         f (Node _ t _ _) = t
         f _ = (0,0,0)
 
+makeTree'       :: Stats -> [SubQuery] -> Time -> [StatsTree]
 makeTree' s []            t = [Leaf t]
 makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
   where (yes, no) = c s
@@ -234,7 +234,7 @@ qCompleter env s = return (filter (startsWith s) known)
 fromQCommands    :: Env -> QCommands -> E Commands
 fromQCommand     :: Env -> QCommand -> E (Either Query Env)
 fromQQuery       :: Env -> QQuery -> E Query
-fromQSubQuery    :: Env -> QSubQuery -> E Query
+fromQSubQuery    :: Env -> QSubQuery -> E [SubQuery]
 fromQIndex       :: QIndex -> (EditStats -> String)
 addGrouping      :: Ord a => Bool -> (EditStats -> a) -> Group
 
@@ -251,11 +251,9 @@ fromQCommand env (Right a) = Right <$> i a
   where i (QAssign s q) = flip (D.insert s) env <$> fromQQuery env q
 
 
--- First convert all the subqueries, then apply
--- ordering and limiting to the last grouping function
--- 
-fromQQuery env []     = Ok []
-fromQQuery env (c:cs) = fromQSubQuery env c >>= (\a -> (a++) <$> fromQQuery env cs)
+fromQQuery env ([], s)    = Ok ([], s)
+fromQQuery env ((c:cs),s) = fromQSubQuery env c >>= 
+                             (\a -> flip (,) s . (a++) . fst <$> fromQQuery env (cs,s))
 
 
 
@@ -272,7 +270,7 @@ fromQSubQuery _ q@(QSubQuery _ Day   _ _ _ _) = makeQuery q (day . edit)
 fromQSubQuery _ q@(QSubQuery _ Dow   _ _ _ _) = makeQuery q (dow . edit)
 fromQSubQuery _ q@(QSubQuery _ Doy   _ _ _ _) = makeQuery q (doy . edit)
 fromQSubQuery env (QCall s)                 = case D.lookup s env of 
-                                                Just q -> Ok q
+                                                Just (q,s) -> Ok q
                                                 Nothing -> Failed $ "Unknown definition `" ++ s ++ "'"
 
 makeQuery (QSubQuery gr t c h o l) f  = Ok [(fromQAs h t, view, constraints, grouping)]

@@ -6,8 +6,8 @@ import Control.Applicative
 --
 type QCommands   = [QCommand]
 type QCommand    = Either QQuery QAssign 
-type QQuery      = [QSubQuery]
 data QAssign     = QAssign String QQuery
+type QQuery      = ([QSubQuery], Maybe String)
 data QSubQuery   = QSubQuery Bool QIndex [QConstraint] QAs QOrder QLimit | QCall String
 data QIndex      = Ext | Lang | Proj | File | Year
                  | Month | Day | Dow | Doy deriving (Eq, Show)
