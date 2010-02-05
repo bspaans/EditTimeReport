@@ -4,7 +4,7 @@ Version 1.1:
     * default report(s)
 
     * a prelude like file, defining the Calendar function
-      (to be extended in the future)
+      (to be extended in the future) [DONE]
 
     * Some scripts in the scripts/ directory:
         report-to-csv
@@ -43,3 +43,5 @@ Future:
     * LaTeX printer
 
     * Markdown printer
+
+    * Rewrite bash client in Haskell.
