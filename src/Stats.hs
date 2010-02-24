@@ -6,6 +6,7 @@ module Stats ( -- * Statistics
                StatOptions(..),
                -- ** Time
                Time, sumTime, sumTime',
+               fromSeconds, toSeconds,
                -- * Trees
                Header, Title,
                StatsTree(..),

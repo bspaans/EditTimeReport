@@ -96,8 +96,6 @@ makeConstraint p = con ([], [])
 
 
 
-makeNode        :: String -> Stats -> [SubQuery] -> StatsTree
-treeFromQuery   :: String -> Env -> Stats -> E ExecResult
 
 executeCommands :: Stats -> Commands -> ExecResult
 executeCommands st (q, env) = (map (flip makeTree st) q, env)
@@ -111,16 +109,14 @@ executeCommands st (q, env) = (map (flip makeTree st) q, env)
 --
 makeTree        :: Query -> Stats -> StatsTree
 makeTree ([],t) s = Root [] [] (fromMaybe "" t) (0,0,0)
-makeTree (q, t) s = Root nodes headers title time
-  where nodes = makeTree' s q (0,0,0)
+makeTree (q, t) s = Root nodes headers title time'
+  where (nodes, time') = makeTree' s q (0,0,0)
         headers = map (\(h,_,_,_) -> h) q ++ ["Edit Time"]
         title = fromMaybe (concat . intersperse " / " $ reverse headers) t
-        time = sumTime' (map f nodes)
-        f (Node _ t _ _) = t
-        f _ = (0,0,0)
 
-makeTree'       :: Stats -> [SubQuery] -> Time -> [StatsTree]
-makeTree' s []            t = [Leaf t]
+
+makeTree'       :: Stats -> [SubQuery] -> Time -> ([StatsTree], Time)
+makeTree' s []              t = ([Leaf t], t)
 makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
   where (yes, no) = c s
         nodes = map (\gr -> makeNode (v . head $ gr) gr cs) (g yes)
@@ -130,16 +126,24 @@ makeTree' s ((_,v,c, g):cs) t = pruneNodeTrees nodes
 -- the trees that don't have any leafs in them, 
 -- and we already keep that information in the Nodes.
 --
-pruneNodeTrees :: [StatsTree] -> [StatsTree]
-pruneNodeTrees = filter ((/=0) . f) 
+pruneNodeTrees :: [StatsTree] -> ([StatsTree], Time)
+pruneNodeTrees tr = (trees, sumNodeTime trees)
   where f (Node i _ _ _) = i
         f _              = 1
+        trees            = filter ((/=0) . f) tr
+
+sumNodeTime :: [StatsTree] -> Time 
+sumNodeTime [] = (0,0,0)
+sumNodeTime ((Leaf _):cs) = sumNodeTime cs
+sumNodeTime ((Node _ ti _ _):cs) = fromSeconds (toSeconds ti + (toSeconds . sumNodeTime $ cs))
+
 
 -- A Node is made of an Int describing the number of leafs,
 -- a string that is used for printing, and of course its children.
 --
-makeNode s yes cs = Node (n tr) time s tr
-  where tr = makeTree' yes cs time
+makeNode :: String -> Stats -> [SubQuery] -> StatsTree
+makeNode s yes cs = Node (n tr) time' s tr
+  where (tr, time') = makeTree' yes cs time
         time = sumTime yes
         n [] = 0       -- Count children
         n ((Node i _ _ _):cs) = i + n cs
@@ -149,6 +153,7 @@ makeNode s yes cs = Node (n tr) time s tr
 -- A helper function that builds a StatsTree out 
 -- of a String in the Query language.
 --
+treeFromQuery :: String -> Env -> Stats -> E ExecResult
 treeFromQuery s env st = executeCommands st <$> (parseCommands s >>= fromQCommands env)
 
 
