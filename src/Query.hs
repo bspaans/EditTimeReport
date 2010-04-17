@@ -356,12 +356,12 @@ fromQConstraints i qc = makeConstraint $ foldr f (const True) preds
   where f a b p       = a p && b p 
         preds         = map (makePred i) qc
 
-makePred i (QC Path  op e) = fromQOper op (fromQExpr e) . fileName
-makePred i (QC Month op e) = numStringC op e month getMonth
-makePred i (QC Dow   op e) = numStringC op e dow getDow
 makePred i (QC Year  op e) = numericalC op year e
+makePred i (QC Month op e) = numStringC op e month getMonth
+makePred i (QC Week  op e) = numericalC op week e
 makePred i (QC Day   op e) = numericalC op day e
 makePred i (QC Doy   op e) = numericalC op doy e
+makePred i (QC Dow   op e) = numStringC op e dow getDow
 makePred i (QC ind   op e) = fromQOper op (fromQExpr e) . fromQIndex ind
 makePred i (QCOE     op e) = makePred i (QC i op e)
 makePred i (QCE         e) = makePred i (QC i QE e)

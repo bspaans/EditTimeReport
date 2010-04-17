@@ -134,12 +134,12 @@ typeCheckConstraints i cs = all typeCheck cs
   where typeCheck (QC _ _ _) = True
         typeCheck (QCOE _ e) = check e
         typeCheck (QCE e) = check e
-        check e = if elem i [Year, Day, Doy] 
+        check e = if elem i [Year, Week, Day, Doy] 
                     then case e of { QInt _ -> True ; _ -> False }
                     else True
                             
 
-typeCheckQC a b c = if elem a [Year, Day, Doy] 
+typeCheckQC a b c = if elem a [Year, Week, Day, Doy] 
                       then case c of 
                             QInt _ -> return $ QC a b c
                             QString s -> fail $ "Expecting an integer, but got string \"" ++ s ++ "\"" 
