@@ -19,6 +19,8 @@ import Char
 import Maybe (mapMaybe)
 import Control.Applicative
 import Data.List as L (groupBy)
+import Data.Time.Calendar
+import Data.Time.Calendar.WeekDate
 import qualified Data.Map as D hiding (map, filter, mapMaybe)
 import System.FilePath
 
@@ -28,6 +30,7 @@ import System.FilePath
 --
 data Edit  = Edit {   year    :: Int
                     , month   :: Int
+                    , week    :: Int
                     , day     :: Int
                     , hour    :: Int
                     , minute  :: Int
@@ -51,9 +54,10 @@ parseEdits :: String   -> Edits
 parseEdit  :: String   -> Maybe Edit
 
 parseEdits  = mapMaybe parseEdit . lines
-parseEdit s = if a then Just $ Edit y m d h mi se dw dy (unwords (drop 9 w))
+parseEdit s = if a then Just $ Edit y m we d h mi se dw dy (unwords (drop 9 w))
                    else Nothing
                    where w = words s
+                         (_, we, _) = toWeekDate (fromGregorian (toInteger y) m d)
                          i = take 8 w
                          a = length w >= 9 && all (all isDigit) i && w !! 8 == "EDIT"
                          (y:m:d:h:mi:se:dw:dy:[]) = map read i

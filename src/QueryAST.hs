@@ -9,8 +9,8 @@ type QCommand    = Either QQuery QAssign
 data QAssign     = QAssign String QQuery
 type QQuery      = ([QSubQuery], Maybe String)
 data QSubQuery   = QSubQuery Bool QIndex [QConstraint] QAs QOrder QLimit | QCall String
-data QIndex      = Ext | Lang | Proj | File | Year
-                 | Month | Day | Dow | Doy deriving (Eq, Show)
+data QIndex      = Ext | Lang | Proj | Path | File | Dir | Year
+                 | Month | Week | Day | Dow | Doy deriving (Eq, Show)
 data QConstraint = QC QIndex QOper QExpr | QCOE QOper QExpr | QCE QExpr
 data QOper       = QL | QLE | QG | QGE | QE | QNE
 data QExpr       = QInt Int | QString String

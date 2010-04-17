@@ -32,31 +32,25 @@ tokens :-
   ";"           { \p s -> TSemiColon p              }
   extension     { \p s -> TExtension p              }
   extensions    { \p s -> TExtension p              }
-  ext           { \p s -> TExtension p              }
-  e             { \p s -> TExtension p              }
   languages     { \p s -> TLanguage p               }
   language      { \p s -> TLanguage p               }
-  langs         { \p s -> TLanguage p               }
-  lang          { \p s -> TLanguage p               }
-  l             { \p s -> TLanguage p               }
   projects      { \p s -> TProject p                }
   project       { \p s -> TProject p                }
   proj          { \p s -> TProject p                }
-  p             { \p s -> TProject p                }
-  filenames     { \p s -> TFilename p               }
-  filename      { \p s -> TFilename p               }
-  files         { \p s -> TFilename p               }
-  file          { \p s -> TFilename p               }
-  f             { \p s -> TFilename p               }
+  path          { \p s -> TPath p                   }
+  filenames     { \p s -> TFilename p               } 
+  filename      { \p s -> TFilename p               } 
+  file          { \p s -> TFilename p               } 
+  directories   { \p s -> TDirectory p              } 
+  directory     { \p s -> TDirectory p              } 
   years         { \p s -> TYear p                   }
   year          { \p s -> TYear p                   }
-  y             { \p s -> TYear p                   }
   months        { \p s -> TMonth p                  }
   month         { \p s -> TMonth p                  }
-  m             { \p s -> TMonth p                  }
+  weeks         { \p s -> TWeek p                   }
+  week          { \p s -> TWeek p                   }
   days          { \p s -> TDay p                    }
   day           { \p s -> TDay p                    }
-  da            { \p s -> TDay p                    }
   dow           { \p s -> TDow p                    }
   doy           { \p s -> TDoy p                    }
   ascending     { \p s -> TAscending p              }
@@ -79,9 +73,12 @@ tokens :-
 data ConstraintToken = TExtension AlexPosn
                      | TLanguage AlexPosn
                      | TProject AlexPosn
-                     | TFilename AlexPosn
+                     | TPath AlexPosn
+                     | TFilename AlexPosn 
+                     | TDirectory AlexPosn
                      | TYear AlexPosn
                      | TMonth AlexPosn
+                     | TWeek AlexPosn
                      | TDay AlexPosn
                      | TDow AlexPosn
                      | TDoy AlexPosn
@@ -130,8 +127,11 @@ showPos (AlexPn _ li co) = unwords ["line", show li, ", column", show co]
 showTokenPos (TExtension p)  = showPos p
 showTokenPos (TLanguage p)   = showPos p
 showTokenPos (TProject p)    = showPos p
+showTokenPos (TPath p)       = showPos p
 showTokenPos (TFilename p)   = showPos p
+showTokenPos (TDirectory p)  = showPos p
 showTokenPos (TYear p)       = showPos p
+showTokenPos (TWeek p)       = showPos p
 showTokenPos (TMonth p)      = showPos p
 showTokenPos (TDay p)        = showPos p
 showTokenPos (TDow p)        = showPos p

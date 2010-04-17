@@ -125,7 +125,7 @@ type Seconds        = Int
 type Time           = (Int, Int, Int)
 
 
-diffEdit (Edit _ _ _ h m s _ _ _) (Edit _ _ _ h' m' s' _ _ _) = fromSeconds t
+diffEdit (Edit _ _ _ _ h m s _ _ _) (Edit _ _ _ _ h' m' s' _ _ _) = fromSeconds t
      where t        = toSeconds (h', m', s') - toSeconds (h, m , s)
 
 

@@ -33,9 +33,12 @@ import QueryAST
   extension { TExtension p  } 
   language  { TLanguage p   } 
   project   { TProject p    } 
-  filename  { TFilename p   } 
+  path      { TPath p       } 
+  filename  { TFilename p   }
+  directory { TDirectory p  }
   year      { TYear p       } 
   month     { TMonth p      } 
+  week      { TWeek p       }
   day       { TDay p        } 
   dow       { TDow p        } 
   doy       { TDoy p        } 
@@ -81,12 +84,15 @@ GROUP : group             { True  }
       | nogroup           { False }
       |                   { True  }
 
-INDEX : extension         { Ext   }
+INDEX : extension         { Ext   } 
       | language          { Lang  } 
       | project           { Proj  } 
+      | path              { Path  } 
       | filename          { File  } 
-      | year              { Year  } 
+      | directory         { Dir   }
+      | year              { Year  }  
       | month             { Month } 
+      | week              { Week  }
       | day               { Day   } 
       | dow               { Dow   } 
       | doy               { Doy   } 
