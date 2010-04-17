@@ -1,3 +1,4 @@
+{-# LANGUAGE Rank2Types, FlexibleContexts #-}
 -- | This module can take a parsed query, 
 -- convert it into something it can use and 
 -- execute it; resulting in a StatsTree, which 
@@ -31,6 +32,7 @@ import System.IO
 import System.Directory
 import System.FilePath
 import Text.Printf
+import Text.Regex
 import Control.Monad
 
 import System.CPUTime
@@ -369,10 +371,10 @@ makePred i (QCE         e) = makePred i (QC i QE e)
 
 -- helper functions; to do the conversion
 stringC op s f    = fromQOper op (map toUpper s) . map toUpper . f . edit
-numericalC op g e = fromQOper op (read (fromQExpr e)) . g . edit
+numericalC op g e = fromQOper op (fromQExpr e) . show . g . edit
 maybeC op g h e   = maybe False (fromQOper op (fromQExpr e) . h) . g
 
-numStringC op (QInt i) num _      = fromQOper op i . num . edit
+numStringC op (QInt i) num _      = fromQOper op (show i) . show . num . edit
 numStringC op (QString s) num str = stringC op s (str . num)
 
 
@@ -386,12 +388,12 @@ fromQExpr (QString s) = s
 -- Operators are written flipped around to make it easier 
 -- to write in a point-free style (see above)
 --
-fromQOper :: Ord a => QOper -> (a -> a -> Bool)
+fromQOper :: QOper -> (String -> String -> Bool)
 fromQOper QL  = (>)  
 fromQOper QG  = (<)  
 fromQOper QLE = (>=) 
 fromQOper QGE = (<=) 
 fromQOper QE  = (==)
 fromQOper QNE = (/=)
-
+fromQOper QREG = \m s -> isJust $ matchRegex (mkRegex m) s
 

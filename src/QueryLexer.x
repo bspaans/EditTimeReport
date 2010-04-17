@@ -30,6 +30,7 @@ tokens :-
   "*"           { \p s -> TProduct p                }
   ":="          { \p s -> TAssign p                 }
   ";"           { \p s -> TSemiColon p              }
+  "~="          { \p s -> TRegex p                  }
   extension     { \p s -> TExtension p              }
   extensions    { \p s -> TExtension p              }
   languages     { \p s -> TLanguage p               }
@@ -97,6 +98,7 @@ data ConstraintToken = TExtension AlexPosn
                      | TG AlexPosn
                      | TLE AlexPosn
                      | TGE AlexPosn
+                     | TRegex AlexPosn
                      | TSemiColon AlexPosn
                      | TAs AlexPosn
                      | TInteger AlexPosn Int
@@ -151,6 +153,7 @@ showTokenPos (TL p)          = showPos p
 showTokenPos (TG p)          = showPos p
 showTokenPos (TLE p)         = showPos p
 showTokenPos (TGE p)         = showPos p
+showTokenPos (TRegex p)      = showPos p
 showTokenPos (TInteger p _)  = showPos p
 showTokenPos (TString p _)   = showPos p
 showTokenPos (TAssign p)     = showPos p

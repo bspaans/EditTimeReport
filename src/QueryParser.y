@@ -28,6 +28,7 @@ import QueryAST
   ','       { TComma p      } 
   '*'       { TProduct p    } 
   ':='      { TAssign p     }
+  '~='      { TRegex p      }
   ';'       { TSemiColon p  }
   as        { TAs p         }
   extension { TExtension p  } 
@@ -111,12 +112,13 @@ CONSTRAINT : INDEX OPERATOR EXPR        {% typeCheckQC $1 $2 $3 }
 AS : as string { As $2 }
    |           { DefaultAs }
 
-OPERATOR : '<'           { QL  }
-         | '>'           { QG  }
-         | '<='          { QLE }
-         | '>='          { QGE }
-         | '=='          { QE  }
-         | '!='          { QNE }
+OPERATOR : '<'           { QL   }
+         | '>'           { QG   }
+         | '<='          { QLE  }
+         | '>='          { QGE  }
+         | '=='          { QE   }
+         | '!='          { QNE  }
+         | '~='          { QREG }
 
 EXPR : integer           { QInt $1 }
      | string            { QString $1 }
