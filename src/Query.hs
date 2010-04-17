@@ -229,6 +229,7 @@ historyLocation = (</> ".report_history") <$> getUserDocumentsDirectory
 qCompleter :: Env -> String -> IO [String]
 qCompleter env s = return (filter (startsWith s) known)
   where known = ["extension", "language", "project", "filename"
+               , "path", "directory", "week"
                , "year", "month", "day", "dow", "doy", "limit"
                , "asc", "desc"] ++ D.keys env ++ map fst replCommands
 
