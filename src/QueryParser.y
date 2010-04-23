@@ -150,13 +150,14 @@ typeCheckQC a b c = if elem a [Year, Week, Day, Doy]
 type ParseResult = E QCommands
 
 parseError    :: [ConstraintToken]  -> E a
-parseCommands :: String   -> ParseResult
-parseFile     :: FilePath -> IO ParseResult
-
 parseError    s = fail "Parse error."
+
+parseCommands :: String   -> ParseResult
 parseCommands s = case alexScanTokens' s of 
                     Left err -> fail err
                     Right a -> queryParser a
-parseFile     f = readFile f >>= return . parseCommands
+
+parseFile     :: FilePath -> ET IO QCommands
+parseFile     f = ET (readFile f >>= return . parseCommands)
 
 }

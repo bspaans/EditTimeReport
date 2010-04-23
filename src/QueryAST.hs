@@ -1,8 +1,8 @@
 module QueryAST where
 
-import Control.Applicative
+import Control.Monad.Trans
 
--- A straight forward AST for the Query DSL
+-- * AST for the Query DSL
 --
 type QCommands   = [QCommand]
 type QCommand    = Either QQuery QAssign 
@@ -35,6 +35,10 @@ instance Monad E where
   m >>= k = case m of { Ok a -> k a ; Failed e -> Failed e }
   fail = Failed
 
+
+instance Functor m => Functor (ET m) where 
+  fmap f m = ET (fmap (fmap f) (runET m))
+
 instance Monad m => Monad (ET m) where 
   return  = ET . return . Ok 
   m >>= f = ET (do o <- runET m 
@@ -42,13 +46,5 @@ instance Monad m => Monad (ET m) where
                      Ok a -> runET (f a) 
                      Failed s -> return (Failed s))
 
-
-{-
-
-ET m a -> (a -> ET m b) -> (ET m b)
-ET(m (E a)) -> (a -> ET(m (E b))) -> ET(m (E a))
-
-m a -> (a -> m b) -> m b
-m (E a) -> (E a -> m (E b)) -> m (E b)
-
--}
+instance MonadTrans ET where 
+  lift m = ET (m >>= \o -> return (Ok o))
