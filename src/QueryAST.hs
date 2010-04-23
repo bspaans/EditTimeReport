@@ -18,12 +18,16 @@ data QOrder      = Asc | Desc | NoOrder
 data QLimit      = Limit Int | NoLimit
 data QAs         = As String | DefaultAs
 
+
 -- A Succes/Failure data type used for parsing
 --
 data E a = Ok a | Failed String
 
+newtype ET m a = ET { runET :: m (E a) }
+
+
 instance Functor E where
-  fmap f (Ok a)  = Ok $ f a
+  fmap f (Ok a)     = Ok $ f a
   fmap f (Failed e) = Failed e
 
 instance Monad E where
@@ -31,3 +35,20 @@ instance Monad E where
   m >>= k = case m of { Ok a -> k a ; Failed e -> Failed e }
   fail = Failed
 
+instance Monad m => Monad (ET m) where 
+  return  = ET . return . Ok 
+  m >>= f = ET (do o <- runET m 
+                   case o of 
+                     Ok a -> runET (f a) 
+                     Failed s -> return (Failed s))
+
+
+{-
+
+ET m a -> (a -> ET m b) -> (ET m b)
+ET(m (E a)) -> (a -> ET(m (E b))) -> ET(m (E a))
+
+m a -> (a -> m b) -> m b
+m (E a) -> (E a -> m (E b)) -> m (E b)
+
+-}

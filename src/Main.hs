@@ -4,6 +4,7 @@ module Main where
 import Query
 import Stats
 
+import QueryAST
 import Control.Applicative
 import Control.Monad
 import Control.Arrow
@@ -84,7 +85,7 @@ exec' so po opts nonOpts=
        then putStr $ execute' emptyEnv po (commands opts) stats 
        else when (length nonOpts <= 1 && not (interactive opts)) (i emptyEnv)
      if length nonOpts > 1 
-       then do co <- commandsFromFiles emptyEnv (tail nonOpts)
+       then do co <- runET $ commandsFromFiles emptyEnv (tail nonOpts)
                case co of 
                  Failed s   -> error s
                  Ok (st, e) -> do putStr $ execute emptyEnv po co stats 

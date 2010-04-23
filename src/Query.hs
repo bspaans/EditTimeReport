@@ -54,20 +54,16 @@ type Group      = Stats -> [Stats]
 
 -- | Read commands from files in a given environment.
 --
-commandsFromFiles :: Env -> [FilePath] -> IO (E Commands)
-commandsFromFiles env []     = return $ Ok ([], env)
-commandsFromFiles env (f:fp) = do o <- commandsFromFile env f
-                                  case o of 
-                                    Ok (q,e) -> do o2 <- commandsFromFiles e fp 
-                                                   case o2 of 
-                                                     Ok (q2,e) -> return (Ok (q ++ q2, e))
-                                                     Failed s -> return (Failed s)
-                                    Failed s -> return (Failed s)
+commandsFromFiles :: Env -> [FilePath] -> ET IO Commands
+commandsFromFiles env []     = return ([], env)
+commandsFromFiles env (f:fp) = commandsFromFile env f 
+                           >>= \(q,e) -> commandsFromFiles e fp 
+                           >>= \(q2,e) -> return (q ++ q2, e)
 
 -- | Read commands from a file in a given environment.
 --
-commandsFromFile :: Env -> FilePath -> IO (E Commands)
-commandsFromFile env = fmap (>>= fromQCommands env) . parseFile
+commandsFromFile :: Env -> FilePath -> ET IO Commands
+commandsFromFile env = ET . fmap (>>= fromQCommands env) . parseFile
 
 
 -- | This function executes Commands in a given environment
