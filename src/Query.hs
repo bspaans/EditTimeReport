@@ -132,8 +132,6 @@ treeFromQuery s env st = executeCommands st <$> (parseCommands s >>= fromQComman
 
 -- | Interactive Query prompt using editline
 --
-interactiveQueries :: PrintOptions -> Stats -> Env -> IO()
-promptStart :: IO Bool
 
 type Action = Stats -> Env -> PrintOptions -> IO()
 
@@ -142,8 +140,8 @@ printerDict = [("csv", Csv), ("html", Html), ("text", Text), ("xhtml", XHtml)]
 
 makePrintAction (s, pr) = [('-' : s, (m un , "Disable " ++ s ++ " printer"))
                          , ('+' : s, (m se , "Enable "  ++ s ++ " printer"))]
-  where un = unSet (PrinterF pr)
-        se = set   (PrinterF pr)
+  where un = unSet pr
+        se = set   pr
         m f stats env = repl stats env . f
 
 
@@ -157,7 +155,10 @@ printHelp = putStrLn $ '\n' : unlines (sort (map h replCommands))
   where h (c, (_, d)) = printf "   %-8s  %s" c d
 
 
+interactiveQueries :: PrintOptions -> Stats -> Env -> IO()
 interactiveQueries po stats env = promptStart >> repl stats env po
+
+repl :: Stats -> Env -> PrintOptions -> IO ()
 repl stats env po = do
          setCompletionEntryFunction (Just $ qCompleter env)
          maybeLine <- readline "> " 
@@ -176,7 +177,7 @@ eval stats env po s = do
                          pr' s p = printf s (fromPico p)
                      putStrLn $ printTree po st
                      t2 <- getCPUTime 
-                     when (not (ShowExecTime False `isSet` po))
+                     when (showExecTime po)
                        (putStrLn (pr' "\nQuery executed in %.5f" (t2 - t1)
                                ++ pr' " (+/-%.5f) seconds." cpuTimePrecision))
                      repl stats e po
@@ -185,6 +186,7 @@ eval stats env po s = do
 
 
 
+promptStart :: IO Bool
 promptStart = do putStrLn (unlines ["Time Report 1.0a, interactive session"
                                    , "Copyright 2009-2010, Bart Spaans"
                                    , "Type \"help\" for more information"])
