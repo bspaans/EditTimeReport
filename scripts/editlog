@@ -46,11 +46,12 @@ if [ "$cmd" == "" ] ; then
     exit 1
 fi
 
-cat > tmp.session << EOF
+t="$(tempfile)"
+cat > "$t" << EOF
 $cmd
 quit
 EOF
 
-cat tmp.session | telnet $host $port >& /dev/null
+cat "$t" | telnet $host $port >& /dev/null
 
-rm tmp.session
+rm "$t"
